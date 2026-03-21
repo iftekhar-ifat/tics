@@ -21,8 +21,8 @@ nsis:
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}
   uninstallDisplayName: ${productName}
-  oneClick: false
-  perMachine: false
+  oneClick: true
+  perMachine: true
   allowToChangeInstallationDirectory: true
   createDesktopShortcut: always
   createStartMenuShortcut: true
