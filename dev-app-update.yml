@@ -1,0 +1,5 @@
+provider: github
+owner: iftekhar-ifat
+repo: tics
+releaseType: draft
+updaterCacheDirName: tics-updater
