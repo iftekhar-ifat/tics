@@ -106,6 +106,7 @@ app.whenReady().then(() => {
 
   setupAutoUpdater()
 
+  ipcMain.handle('app:get-version', () => app.getVersion())
   ipcMain.handle('updater:get-state', () => updateState)
   ipcMain.handle('updater:check', async () => {
     try {

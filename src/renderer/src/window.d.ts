@@ -15,6 +15,9 @@ type UpdateState = {
 
 interface Window {
   api: {
+    app: {
+      getVersion: () => Promise<string>
+    }
     updater: {
       getState: () => Promise<UpdateState>
       checkForUpdates: () => Promise<{ ok: boolean; message?: string }>

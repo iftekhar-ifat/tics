@@ -16,6 +16,9 @@ type UpdateState = {
 }
 
 const api = {
+  app: {
+    getVersion: () => ipcRenderer.invoke('app:get-version') as Promise<string>
+  },
   updater: {
     getState: () => ipcRenderer.invoke('updater:get-state') as Promise<UpdateState>,
     checkForUpdates: () =>

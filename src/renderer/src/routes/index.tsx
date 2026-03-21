@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { useEffect, useState } from 'react'
 import { z } from 'zod'
 import { Card, CardContent } from '@/components/ui/card'
 
@@ -13,6 +14,11 @@ export const Route = createFileRoute('/')({
 
 function HomePage(): React.JSX.Element {
   const { q } = Route.useSearch()
+  const [version, setVersion] = useState<string>('...')
+
+  useEffect(() => {
+    void window.api.app.getVersion().then(setVersion)
+  }, [])
 
   return (
     <Card>
@@ -22,6 +28,7 @@ function HomePage(): React.JSX.Element {
           Core release foundations are configured: packaging, updater channel, routing, styling, and
           CI publishing.
         </p>
+        <p className="text-xs text-muted-foreground">App version: v{version}</p>
         {q ? <p className="text-xs text-muted-foreground">Search query: {q}</p> : null}
       </CardContent>
     </Card>
