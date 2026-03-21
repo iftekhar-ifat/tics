@@ -36,4 +36,4 @@ jobs:
       - name: Build and publish draft release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: pnpm exec electron-builder --win --publish always
+        run: pnpm run publish
