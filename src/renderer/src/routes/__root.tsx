@@ -7,7 +7,7 @@ export const Route = createRootRoute({
 
 function RootLayout(): React.JSX.Element {
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen">
       <header className="border-b border-border">
         <nav className="mx-auto flex max-w-5xl items-center gap-6 px-4 py-3">
           <span className="text-sm font-semibold">Tics</span>

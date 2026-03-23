@@ -2,6 +2,8 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { z } from 'zod'
 import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 
 const HomeSearchSchema = z.object({
   q: z.string().optional()
@@ -30,6 +32,8 @@ function HomePage(): React.JSX.Element {
         </p>
         <p className="text-xs text-muted-foreground">App version: v{version}</p>
         {q ? <p className="text-xs text-muted-foreground">Search query: {q}</p> : null}
+        <Button>Hello</Button>
+        <Checkbox />
       </CardContent>
     </Card>
   )

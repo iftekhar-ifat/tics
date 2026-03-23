@@ -1,4 +1,4 @@
-function App(): React.JSX.Element {
+/* function App(): React.JSX.Element {
   return (
     <div className="p-8 text-sm text-muted-foreground">
       Tics renderer app is mounted through TanStack Router.
@@ -7,3 +7,4 @@ function App(): React.JSX.Element {
 }
 
 export default App
+ */

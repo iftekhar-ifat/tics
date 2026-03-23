@@ -1,0 +1,21 @@
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "radix-lyra",
+  "rsc": true,
+  "tsx": true,
+  "tailwind": {
+    "config": "",
+    "css": "src/renderer/src/assets/main.css",
+    "baseColor": "neutral",
+    "cssVariables": true,
+    "prefix": ""
+  },
+  "aliases": {
+    "components": "src/renderer/src/components",
+    "utils": "@/lib/utils",
+    "ui": "src/renderer/src/components/ui",
+    "lib": "@/lib",
+    "hooks": "src/renderer/src/hooks"
+  },
+  "iconLibrary": "phosphor"
+}
