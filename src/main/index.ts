@@ -63,19 +63,29 @@ async function waitForBackend(retries = 20, intervalMs = 300): Promise<boolean> 
 
 function startBackend(): void {
   const isWindows = process.platform === 'win32'
+
+  // In production, use the PyInstaller binary. In dev, use python directly.
+  const backendBinary = is.dev
+    ? null
+    : join(process.resourcesPath, 'backend', isWindows ? 'main.exe' : 'main')
+
   const pythonCmd = isWindows ? 'python' : 'python3'
 
   const backendPath = is.dev
     ? join(__dirname, '../../backend/main.py')
     : join(process.resourcesPath, 'backend/main.py')
 
-  console.log('[Main] Starting backend with:', pythonCmd)
+  console.log('[Main] Starting backend...')
+  console.log('[Main] Backend binary:', backendBinary)
   console.log('[Main] Backend script:', backendPath)
   backendStatus = 'starting'
   broadcastBackendStatus()
 
+  const cmd = is.dev ? pythonCmd : backendBinary || pythonCmd
+  const args = is.dev ? [backendPath] : []
+
   try {
-    backendProcess = spawn(pythonCmd, [backendPath], {
+    backendProcess = spawn(cmd, args, {
       cwd: is.dev ? join(__dirname, '../../backend') : join(process.resourcesPath, 'backend'),
       stdio: ['ignore', 'pipe', 'pipe'],
       detached: false
