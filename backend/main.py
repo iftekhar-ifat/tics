@@ -148,6 +148,13 @@ async def websocket_endpoint(websocket: WebSocket):
 
 if __name__ == "__main__":
     import uvicorn
+    import argparse
 
-    # Run the server on port 8765
-    uvicorn.run(app, host="127.0.0.1", port=8765, log_level="info")
+    parser = argparse.ArgumentParser(description="TICS Backend API")
+    parser.add_argument(
+        "--port", type=int, default=8765, help="Port to run the server on"
+    )
+    args = parser.parse_args()
+
+    # Run the server on the specified port
+    uvicorn.run(app, host="127.0.0.1", port=args.port, log_level="info")

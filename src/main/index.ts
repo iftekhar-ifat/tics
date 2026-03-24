@@ -45,6 +45,8 @@ function broadcastBackendStatus(): void {
 }
 
 // Backend lifecycle
+const BACKEND_PORT = 8765
+
 /**
  * Poll /health until the backend responds 200 or we exhaust retries.
  * Resolves true if healthy, false if timed out.
@@ -52,7 +54,7 @@ function broadcastBackendStatus(): void {
 async function waitForBackend(retries = 20, intervalMs = 300): Promise<boolean> {
   for (let i = 0; i < retries; i++) {
     try {
-      const res = await fetch('http://127.0.0.1:8765/health')
+      const res = await fetch(`http://127.0.0.1:${BACKEND_PORT}/health`)
       if (res.ok) return true
     } catch {
       // Not up yet — keep waiting
@@ -99,7 +101,10 @@ function startBackend(): void {
   broadcastBackendStatus()
 
   const cmd = is.dev ? finalPythonCmd : useBinary || pythonCmd
-  const args = is.dev || !useBinary ? [backendPath] : []
+
+  // Try to start on default port first, then increment if needed
+  let portToUse = BACKEND_PORT
+  const args = is.dev || !useBinary ? [backendPath, `--port=${portToUse}`] : [`--port=${portToUse}`]
 
   try {
     backendProcess = spawn(cmd, args, {
@@ -113,7 +118,29 @@ function startBackend(): void {
     })
 
     backendProcess.stderr?.on('data', (data) => {
-      console.error('[Backend stderr]:', data.toString())
+      const stderr = data.toString()
+      console.error('[Backend stderr]:', stderr)
+
+      // Check for port binding errors and retry with different port
+      if (stderr.includes('10048') || stderr.includes('address already in use')) {
+        console.log('[Main] Port binding failed, trying next port...')
+        backendProcess?.kill()
+
+        // Try ports 8766, 8767, 8768, 8769
+        const nextPort = portToUse + 1
+        if (nextPort <= 8770) {
+          portToUse = nextPort
+          const retryArgs =
+            is.dev || !useBinary ? [backendPath, `--port=${portToUse}`] : [`--port=${portToUse}`]
+
+          console.log(`[Main] Retrying on port ${portToUse}...`)
+          backendProcess = spawn(cmd, retryArgs, {
+            cwd: is.dev ? join(__dirname, '../../backend') : join(process.resourcesPath, 'backend'),
+            stdio: ['ignore', 'pipe', 'pipe'],
+            detached: false
+          })
+        }
+      }
     })
 
     backendProcess.on('error', (err) => {
@@ -132,6 +159,7 @@ function startBackend(): void {
     waitForBackend().then((healthy) => {
       if (healthy) {
         backendStatus = 'running'
+        console.log(`[Main] Backend running on port ${portToUse}`)
       } else {
         console.error('[Main] Backend did not become healthy in time')
         backendStatus = 'error'
@@ -272,12 +300,12 @@ app.whenReady().then(() => {
   // --- IPC: backend ---
   ipcMain.handle('backend:get-status', () => ({
     status: backendStatus,
-    url: backendStatus === 'running' ? 'http://127.0.0.1:8765' : null
+    url: backendStatus === 'running' ? `http://127.0.0.1:${BACKEND_PORT}` : null
   }))
 
   ipcMain.handle('backend:get-http-status', async () => {
     try {
-      const response = await fetch('http://127.0.0.1:8765/api/status')
+      const response = await fetch(`http://127.0.0.1:${BACKEND_PORT}/api/status`)
       const data = await response.json()
       return { ok: true, data }
     } catch {
