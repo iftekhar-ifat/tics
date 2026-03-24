@@ -12,6 +12,11 @@ files:
 asarUnpack:
   - resources/**
 afterPack: scripts/after-pack.ts
+extraResources:
+  - from: backend/dist/main
+    to: backend
+    filter:
+      - '**/*'
 win:
   executableName: tics
   target:

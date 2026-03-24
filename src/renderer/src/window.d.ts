@@ -13,6 +13,22 @@ type UpdateState = {
   message?: string
 }
 
+type BackendStatus = {
+  status: 'starting' | 'running' | 'stopped' | 'error'
+  url: string | null
+}
+
+type HttpStatusResponse = {
+  ok: boolean
+  data?: {
+    status: string
+    uptime: string
+    connected_clients: number
+    random_value: number
+  }
+  message?: string
+}
+
 interface Window {
   api: {
     app: {
@@ -24,6 +40,11 @@ interface Window {
       downloadUpdate: () => Promise<{ ok: boolean; message?: string }>
       quitAndInstall: () => Promise<void>
       onStateChanged: (callback: (state: UpdateState) => void) => () => void
+    }
+    backend: {
+      getStatus: () => Promise<BackendStatus>
+      getHttpStatus: () => Promise<HttpStatusResponse>
+      onStatusChanged: (callback: (state: BackendStatus) => void) => () => void
     }
   }
 }

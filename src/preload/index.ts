@@ -15,6 +15,22 @@ type UpdateState = {
   message?: string
 }
 
+type BackendStatus = {
+  status: 'starting' | 'running' | 'stopped' | 'error'
+  url: string | null
+}
+
+type HttpStatusResponse = {
+  ok: boolean
+  data?: {
+    status: string
+    uptime: string
+    connected_clients: number
+    random_value: number
+  }
+  message?: string
+}
+
 const api = {
   app: {
     getVersion: () => ipcRenderer.invoke('app:get-version') as Promise<string>
@@ -32,6 +48,18 @@ const api = {
       }
       ipcRenderer.on('updater:state-changed', listener)
       return () => ipcRenderer.removeListener('updater:state-changed', listener)
+    }
+  },
+  backend: {
+    getStatus: () => ipcRenderer.invoke('backend:get-status') as Promise<BackendStatus>,
+    getHttpStatus: () =>
+      ipcRenderer.invoke('backend:get-http-status') as Promise<HttpStatusResponse>,
+    onStatusChanged: (callback: (state: BackendStatus) => void) => {
+      const listener = (_event: Electron.IpcRendererEvent, state: BackendStatus): void => {
+        callback(state)
+      }
+      ipcRenderer.on('backend:status-changed', listener)
+      return () => ipcRenderer.removeListener('backend:status-changed', listener)
     }
   }
 }
