@@ -42,7 +42,7 @@ export default async function afterPack(context: AfterPackContext): Promise<void
   } else {
     // Fallback: copy Python source files
     const backendSrc = join(projectRoot, 'backend')
-    const filesToCopy = ['main.py', 'requirements.txt']
+    const filesToCopy = ['main.py', 'pyproject.toml']
     for (const file of filesToCopy) {
       const src = join(backendSrc, file)
       const dest = join(backendDest, file)

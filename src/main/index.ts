@@ -1,5 +1,6 @@
 import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
+import { existsSync } from 'fs'
 import { spawn, ChildProcess } from 'child_process'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { autoUpdater } from 'electron-updater'
@@ -64,25 +65,37 @@ async function waitForBackend(retries = 20, intervalMs = 300): Promise<boolean> 
 function startBackend(): void {
   const isWindows = process.platform === 'win32'
 
-  // In production, use the PyInstaller binary. In dev, use python directly.
+  // In production, use the PyInstaller binary if it exists. In dev, use python directly.
   const backendBinary = is.dev
     ? null
     : join(process.resourcesPath, 'backend', isWindows ? 'main.exe' : 'main')
 
+  // Check if the binary actually exists (PyInstaller build may not have been run)
+  const useBinary = backendBinary && existsSync(backendBinary) ? backendBinary : null
+
+  // In dev mode, use the uv virtual environment's Python
+  const venvPath = is.dev
+    ? join(__dirname, '../../backend/.venv', isWindows ? 'Scripts/python.exe' : 'bin/python')
+    : null
+  const useVenvPython = is.dev && venvPath && existsSync(venvPath) ? venvPath : null
+
+  // Fallback to system python if venv Python doesn't exist
   const pythonCmd = isWindows ? 'python' : 'python3'
+  const finalPythonCmd = useVenvPython || pythonCmd
 
   const backendPath = is.dev
     ? join(__dirname, '../../backend/main.py')
     : join(process.resourcesPath, 'backend/main.py')
 
   console.log('[Main] Starting backend...')
-  console.log('[Main] Backend binary:', backendBinary)
+  console.log('[Main] Backend binary:', useBinary)
+  console.log('[Main] Python command:', finalPythonCmd)
   console.log('[Main] Backend script:', backendPath)
   backendStatus = 'starting'
   broadcastBackendStatus()
 
-  const cmd = is.dev ? pythonCmd : backendBinary || pythonCmd
-  const args = is.dev ? [backendPath] : []
+  const cmd = is.dev ? finalPythonCmd : useBinary || pythonCmd
+  const args = is.dev || !useBinary ? [backendPath] : []
 
   try {
     backendProcess = spawn(cmd, args, {
