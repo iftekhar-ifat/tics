@@ -19,11 +19,9 @@ export default async function afterPack(context: AfterPackContext): Promise<void
   const isWindows = context.electronPlatformName === 'win32'
   const binaryName = isWindows ? 'main.exe' : 'main'
 
-  // PyInstaller --onefile --name main creates backend/dist/main/main.exe
-  // We need to look in the subfolder, not directly in dist/
+  // PyInstaller --onefile --name main creates backend/dist/main.exe (directly in dist/)
   const projectRoot = join(context.appOutDir, '../../..') // out/<platform>/ -> project root
-  const binarySrcDir = join(projectRoot, 'backend', 'dist', 'main') // PyInstaller puts exe in subfolder named 'main'
-  const binarySrc = join(binarySrcDir, binaryName)
+  const binarySrc = join(projectRoot, 'backend', 'dist', binaryName)
   const backendDest = join(context.appOutDir, 'resources', 'backend')
 
   console.log(`[after-pack] Platform: ${context.electronPlatformName}`)

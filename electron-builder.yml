@@ -13,7 +13,7 @@ asarUnpack:
   - resources/**
 afterPack: scripts/after-pack.ts
 extraResources:
-  - from: backend/dist/main
+  - from: backend/dist
     to: backend
     filter:
       - '**/*'
