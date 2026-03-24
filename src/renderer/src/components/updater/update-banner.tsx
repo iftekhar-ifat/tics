@@ -1,8 +1,8 @@
-import { Download, RefreshCw } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { ArrowsCounterClockwiseIcon, DownloadIcon } from '@phosphor-icons/react'
 
 export function UpdateBanner(): React.JSX.Element | null {
   const [state, setState] = useState<UpdateState>({ status: 'idle' })
@@ -39,7 +39,7 @@ export function UpdateBanner(): React.JSX.Element | null {
     return (
       <div className="fixed bottom-4 right-4">
         <Button size="sm" variant="outline" disabled={isChecking} onClick={checkForUpdates}>
-          <RefreshCw className="h-4 w-4" />
+          <ArrowsCounterClockwiseIcon className="h-4 w-4" />
           Check for updates
         </Button>
       </div>
@@ -66,7 +66,7 @@ export function UpdateBanner(): React.JSX.Element | null {
           </div>
         ) : (
           <Button className="w-full" disabled={isDownloading} onClick={downloadUpdate}>
-            <Download className="h-4 w-4" />
+            <DownloadIcon className="h-4 w-4" />
             Download update
           </Button>
         )}
