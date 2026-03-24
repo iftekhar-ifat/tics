@@ -38,7 +38,27 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Build Python backend with PyInstaller
+        run: pnpm run build:backend
+
+      - name: Verify PyInstaller output
+        run: |
+          echo "Checking PyInstaller output..."
+          if (Test-Path "backend/dist/main/main.exe") {
+            Write-Host "SUCCESS: backend/dist/main/main.exe exists"
+            Get-Item "backend/dist/main/main.exe" | Select-Object Name, Length
+          } else {
+            Write-Host "ERROR: backend/dist/main/main.exe NOT FOUND"
+            if (Test-Path "backend/dist") {
+              Write-Host "Contents of backend/dist:"
+              Get-ChildItem "backend/dist" -Recurse
+            } else {
+              Write-Host "backend/dist folder does not exist"
+            }
+            exit 1
+          }
+
       - name: Build and publish draft release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: pnpm run publish
+        run: pnpm run compile && electron-builder --win --publish always

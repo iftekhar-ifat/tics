@@ -88,7 +88,11 @@ function startBackend(): void {
     : join(process.resourcesPath, 'backend/main.py')
 
   console.log('[Main] Starting backend...')
-  console.log('[Main] Backend binary:', useBinary)
+  console.log('[Main] Platform:', process.platform)
+  console.log('[Main] Mode:', is.dev ? 'development' : 'production')
+  console.log('[Main] process.resourcesPath:', process.resourcesPath)
+  console.log('[Main] Backend binary:', backendBinary)
+  console.log('[Main] Binary exists:', useBinary ? 'YES' : 'NO')
   console.log('[Main] Python command:', finalPythonCmd)
   console.log('[Main] Backend script:', backendPath)
   backendStatus = 'starting'
