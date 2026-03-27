@@ -35,6 +35,19 @@ const api = {
   app: {
     getVersion: () => ipcRenderer.invoke('app:get-version') as Promise<string>
   },
+  dialog: {
+    openDirectory: () =>
+      ipcRenderer.invoke('dialog:open-directory') as Promise<Electron.OpenDialogReturnValue>
+  },
+  system: {
+    getOSInfo: () =>
+      ipcRenderer.invoke('system:get-os-info') as Promise<{
+        os: string
+        device: string
+        deviceName: string
+        memory: string
+      }>
+  },
   updater: {
     getState: () => ipcRenderer.invoke('updater:get-state') as Promise<UpdateState>,
     checkForUpdates: () =>

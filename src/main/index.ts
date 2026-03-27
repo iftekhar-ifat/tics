@@ -1,7 +1,8 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join } from 'path'
 import { existsSync } from 'fs'
 import { spawn, ChildProcess } from 'child_process'
+import { arch, cpus, totalmem, platform, release, type } from 'os'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { autoUpdater } from 'electron-updater'
 import icon from '../../resources/icon.png?asset'
@@ -315,6 +316,57 @@ app.whenReady().then(() => {
       return { ok: true, data }
     } catch {
       return { ok: false, message: 'Failed to connect to backend' }
+    }
+  })
+
+  // --- IPC: dialog ---
+  ipcMain.handle('dialog:open-directory', async () => {
+    if (!mainWindow) return { canceled: true, filePaths: [] }
+    return await dialog.showOpenDialog(mainWindow, {
+      properties: ['openDirectory']
+    })
+  })
+
+  // --- IPC: system ---
+  ipcMain.handle('system:get-os-info', () => {
+    const osPlatform = platform()
+    const osRelease = release()
+    const osType = type()
+    const totalMemory = totalmem()
+    const cpuInfo = cpus()[0]?.model ?? 'Unknown CPU'
+
+    let osName = `${osType} ${osRelease}`
+    if (osPlatform === 'darwin') {
+      osName = `macOS ${osRelease}`
+    } else if (osPlatform === 'win32') {
+      osName = `Windows ${osRelease}`
+    } else {
+      osName = `${osType} ${osRelease}`
+    }
+
+    const memoryGB = Math.round(totalMemory / (1024 * 1024 * 1024))
+
+    // Simple GPU detection logic (placeholder - in real app would use proper detection)
+    let device = 'cpu'
+    let deviceName = cpuInfo
+
+    // For now, default to CPU. In production, you'd check for NVIDIA GPU via nvidia-smi
+    // or Apple Silicon via process.arch === 'arm64' on darwin
+
+    if (osPlatform === 'darwin' && arch() === 'arm64') {
+      device = 'mps'
+      deviceName = 'Apple Silicon'
+    } else {
+      // Check for NVIDIA GPU (simplified)
+      device = 'cpu'
+      deviceName = cpuInfo
+    }
+
+    return {
+      os: osName,
+      device,
+      deviceName,
+      memory: `${memoryGB} GB`
     }
   })
 

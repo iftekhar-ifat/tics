@@ -34,6 +34,17 @@ interface Window {
     app: {
       getVersion: () => Promise<string>
     }
+    dialog: {
+      openDirectory: () => Promise<{ canceled: boolean; filePaths: string[] }>
+    }
+    system: {
+      getOSInfo: () => Promise<{
+        os: string
+        device: string
+        deviceName: string
+        memory: string
+      }>
+    }
     updater: {
       getState: () => Promise<UpdateState>
       checkForUpdates: () => Promise<{ ok: boolean; message?: string }>
