@@ -35,6 +35,9 @@ declare global {
       app: {
         getVersion: () => Promise<string>
       }
+      folder: {
+        scanFolder: (dirPath: string) => Promise<{ imageCount: number; totalSize: number }>
+      }
       updater: {
         getState: () => Promise<UpdateState>
         checkForUpdates: () => Promise<{ ok: boolean; message?: string }>

@@ -37,6 +37,9 @@ interface Window {
     dialog: {
       openDirectory: () => Promise<{ canceled: boolean; filePaths: string[] }>
     }
+    folder: {
+      scanFolder: (dirPath: string) => Promise<{ imageCount: number; totalSize: number }>
+    }
     system: {
       getOSInfo: () => Promise<{
         os: string

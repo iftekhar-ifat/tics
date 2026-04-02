@@ -39,6 +39,13 @@ const api = {
     openDirectory: () =>
       ipcRenderer.invoke('dialog:open-directory') as Promise<Electron.OpenDialogReturnValue>
   },
+  folder: {
+    scanFolder: (dirPath: string) =>
+      ipcRenderer.invoke('folder:scan', dirPath) as Promise<{
+        imageCount: number
+        totalSize: number
+      }>
+  },
   system: {
     getOSInfo: () =>
       ipcRenderer.invoke('system:get-os-info') as Promise<{

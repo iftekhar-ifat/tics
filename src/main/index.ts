@@ -1,6 +1,6 @@
 import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join } from 'path'
-import { existsSync } from 'fs'
+import { existsSync, readdir, stat, type Stats } from 'fs'
 import { spawn, ChildProcess } from 'child_process'
 import { arch, cpus, totalmem, platform, release, type } from 'os'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
@@ -325,6 +325,74 @@ app.whenReady().then(() => {
     return await dialog.showOpenDialog(mainWindow, {
       properties: ['openDirectory']
     })
+  })
+
+  // --- IPC: folder ---
+  const IMAGE_EXTENSIONS = new Set([
+    '.jpg',
+    '.jpeg',
+    '.png',
+    '.gif',
+    '.bmp',
+    '.webp',
+    '.tiff',
+    '.tif',
+    '.svg',
+    '.ico',
+    '.heic',
+    '.heif',
+    '.avif'
+  ])
+
+  async function scanFolder(dirPath: string): Promise<{ imageCount: number; totalSize: number }> {
+    let imageCount = 0
+    let totalSize = 0
+
+    async function walk(currentPath: string): Promise<void> {
+      let entries: string[]
+      try {
+        entries = await new Promise<string[]>((resolve, reject) => {
+          readdir(currentPath, (err, files) => {
+            if (err) reject(err)
+            else resolve(files)
+          })
+        })
+      } catch {
+        return
+      }
+
+      await Promise.all(
+        entries.map(async (entry) => {
+          const fullPath = join(currentPath, entry)
+          try {
+            const fileStat = await new Promise<Stats>((resolve, reject) => {
+              stat(fullPath, (err, s) => {
+                if (err) reject(err)
+                else resolve(s)
+              })
+            })
+            if (fileStat.isDirectory()) {
+              await walk(fullPath)
+            } else if (fileStat.isFile()) {
+              const ext = entry.slice(entry.lastIndexOf('.')).toLowerCase()
+              if (IMAGE_EXTENSIONS.has(ext)) {
+                imageCount++
+                totalSize += fileStat.size
+              }
+            }
+          } catch {
+            // Skip inaccessible files
+          }
+        })
+      )
+    }
+
+    await walk(dirPath)
+    return { imageCount, totalSize }
+  }
+
+  ipcMain.handle('folder:scan', async (_event, dirPath: string) => {
+    return await scanFolder(dirPath)
   })
 
   // --- IPC: system ---

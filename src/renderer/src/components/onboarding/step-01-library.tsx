@@ -10,11 +10,12 @@ export function Step01Library(): React.JSX.Element {
     if (result && !result.canceled && result.filePaths.length > 0) {
       const path = result.filePaths[0]
       const name = path.split(/[/\\]/).pop() || path
+      const { imageCount, totalSize } = await window.api.folder.scanFolder(path)
       setFolderInfo({
         path,
         name,
-        imageCount: 3421,
-        totalSize: 14.2 * 1024 * 1024 * 1024
+        imageCount,
+        totalSize
       })
     }
   }
@@ -25,7 +26,9 @@ export function Step01Library(): React.JSX.Element {
 
   const formatSize = (bytes: number): string => {
     const gb = bytes / (1024 * 1024 * 1024)
-    return `${gb.toFixed(1)} GB`
+    if (gb >= 0.1) return `${gb.toFixed(1)} GB`
+    const mb = bytes / (1024 * 1024)
+    return `${mb.toFixed(1)} MB`
   }
 
   const formatNumber = (num: number): string => {
@@ -58,8 +61,7 @@ export function Step01Library(): React.JSX.Element {
     <div className="flex flex-col items-center justify-center py-8">
       <div className="flex h-48 w-full max-w-sm flex-col items-center justify-center rounded-md border-2 border-dashed border-border">
         <FolderOpenIcon className="mb-2 size-10 text-muted-foreground" />
-        <p className="text-sm">Drop a folder here</p>
-        <p className="mt-1 text-xs text-muted-foreground">or</p>
+        <p className="text-sm">Select a folder</p>
         <Button variant="outline" size="sm" className="mt-2" onClick={handleBrowseFolder}>
           Browse Folder
         </Button>
