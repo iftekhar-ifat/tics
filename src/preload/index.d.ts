@@ -50,6 +50,23 @@ declare global {
         getHttpStatus: () => Promise<HttpStatusResponse>
         onStatusChanged: (callback: (state: BackendStatus) => void) => () => void
       }
+      model: {
+        getStatus: () => Promise<{
+          ok: boolean
+          data?: { ready: boolean; device: string }
+          message?: string
+        }>
+        download: () => Promise<{
+          ok: boolean
+          data?: { status: string }
+          message?: string
+        }>
+        cancelDownload: () => Promise<{
+          ok: boolean
+          data?: { status: string }
+          message?: string
+        }>
+      }
     }
   }
 }

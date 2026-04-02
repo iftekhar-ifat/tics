@@ -9,3 +9,4 @@ out
 backend/main.spec
 backend/dist
 backend/build
+backend/__pycache__

@@ -4,6 +4,9 @@ from contextlib import asynccontextmanager
 import asyncio
 import json
 import random
+import torch
+
+from model_manager import is_model_ready, download_model, cancel_download
 
 # Application state
 connected_websockets: set[WebSocket] = set()
@@ -55,6 +58,18 @@ async def broadcast_status():
             connected_websockets.discard(ws)
 
 
+async def broadcast_ws_message(message: dict):
+    """Send a message to all connected WebSocket clients."""
+    disconnected = set()
+    for ws in connected_websockets:
+        try:
+            await ws.send_json(message)
+        except Exception:
+            disconnected.add(ws)
+    for ws in disconnected:
+        connected_websockets.discard(ws)
+
+
 app = FastAPI(title="TICS Backend API", lifespan=lifespan)
 
 # Configure CORS
@@ -99,6 +114,31 @@ async def get_status():
         "connected_clients": len(connected_websockets),
         "random_value": random.randint(1, 100),
     }
+
+
+@app.get("/model/status")
+async def model_status():
+    """Check if the CLIP model is downloaded and ready."""
+    ready = is_model_ready()
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    return {"ready": ready, "device": device}
+
+
+@app.post("/model/download")
+async def trigger_model_download():
+    """Trigger model download in the background."""
+    if is_model_ready():
+        return {"status": "already_ready"}
+
+    asyncio.create_task(download_model(broadcast_ws_message))
+    return {"status": "started"}
+
+
+@app.post("/model/download/cancel")
+async def cancel_model_download():
+    """Cancel an in-progress model download."""
+    cancel_download()
+    return {"status": "cancelled"}
 
 
 @app.websocket("/ws")

@@ -115,7 +115,8 @@ function startBackend(): void {
     backendProcess = spawn(cmd, args, {
       cwd: is.dev ? join(__dirname, '../../backend') : join(process.resourcesPath, 'backend'),
       stdio: ['ignore', 'pipe', 'pipe'],
-      detached: false
+      detached: false,
+      env: { ...process.env, TICS_DATA_DIR: app.getPath('userData') }
     })
 
     backendProcess.stdout?.on('data', (data) => {
@@ -435,6 +436,41 @@ app.whenReady().then(() => {
       device,
       deviceName,
       memory: `${memoryGB} GB`
+    }
+  })
+
+  // --- IPC: model ---
+  ipcMain.handle('model:get-status', async () => {
+    try {
+      const response = await fetch(`http://127.0.0.1:${backendPort}/model/status`)
+      const data = await response.json()
+      return { ok: true, data }
+    } catch {
+      return { ok: false, message: 'Failed to connect to backend' }
+    }
+  })
+
+  ipcMain.handle('model:download', async () => {
+    try {
+      const response = await fetch(`http://127.0.0.1:${backendPort}/model/download`, {
+        method: 'POST'
+      })
+      const data = await response.json()
+      return { ok: true, data }
+    } catch {
+      return { ok: false, message: 'Failed to start download' }
+    }
+  })
+
+  ipcMain.handle('model:cancel-download', async () => {
+    try {
+      const response = await fetch(`http://127.0.0.1:${backendPort}/model/download/cancel`, {
+        method: 'POST'
+      })
+      const data = await response.json()
+      return { ok: true, data }
+    } catch {
+      return { ok: false, message: 'Failed to cancel download' }
     }
   })
 

@@ -1,34 +1,101 @@
-import { useEffect } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useOnboardingStore } from '@/stores/onboarding-store'
 import { Button } from '@/components/ui/button'
 
 export function Step03Model(): React.JSX.Element {
-  const { modelStatus, setModelStatus, setDownloadProgress, downloadProgress } =
+  const { modelStatus, setModelStatus, downloadProgress, setDownloadProgress } =
     useOnboardingStore()
 
-  const handleDownload = () => {
-    setModelStatus('downloading')
-    setDownloadProgress(0)
+  const [device, setDevice] = useState<string>('')
+  const [downloadSpeed, setDownloadSpeed] = useState<number>(0)
+  const wsRef = useRef<WebSocket | null>(null)
+
+  const connectWebSocket = useCallback(async () => {
+    try {
+      const status = await window.api.backend.getStatus()
+      if (!status.url) return
+
+      const wsUrl = status.url.replace('http', 'ws') + '/ws'
+      const ws = new WebSocket(wsUrl)
+
+      ws.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data)
+          if (msg.type === 'model_download') {
+            setDownloadProgress(msg.percent ?? 0)
+            setDownloadSpeed(msg.speed ?? 0)
+          }
+          if (msg.type === 'model_download_complete') {
+            setModelStatus('complete')
+            setDownloadProgress(100)
+            setDownloadSpeed(0)
+          }
+          if (msg.type === 'model_download_cancelled') {
+            setModelStatus('default')
+            setDownloadProgress(0)
+            setDownloadSpeed(0)
+          }
+        } catch {
+          // ignore non-JSON messages
+        }
+      }
+
+      ws.onclose = () => {
+        wsRef.current = null
+      }
+
+      wsRef.current = ws
+    } catch {
+      // backend not reachable yet
+    }
+  }, [setDownloadProgress, setModelStatus])
+
+  useEffect(() => {
+    const checkStatus = async () => {
+      try {
+        const result = await window.api.model.getStatus()
+        if (result.ok && result.data?.ready) {
+          setModelStatus('complete')
+          setDownloadProgress(100)
+          if (result.data.device) setDevice(result.data.device)
+          return
+        }
+        if (result.data?.device) setDevice(result.data.device)
+      } catch {
+        // backend not ready
+      }
+    }
+
+    void checkStatus()
+    void connectWebSocket()
+
+    return () => {
+      wsRef.current?.close()
+      wsRef.current = null
+    }
+  }, [connectWebSocket, setDownloadProgress, setModelStatus])
+
+  const handleDownload = async () => {
+    try {
+      setModelStatus('downloading')
+      setDownloadProgress(0)
+      setDownloadSpeed(0)
+      await window.api.model.download()
+    } catch {
+      setModelStatus('failed')
+    }
   }
 
   const handleRetry = () => {
-    setModelStatus('downloading')
-    setDownloadProgress(0)
+    void handleDownload()
   }
 
-  useEffect(() => {
-    if (modelStatus === 'downloading') {
-      const interval = setInterval(() => {
-        setDownloadProgress(downloadProgress + 10)
-        if (downloadProgress >= 100) {
-          setModelStatus('complete')
-          clearInterval(interval)
-        }
-      }, 200)
-      return () => clearInterval(interval)
-    }
-    return undefined
-  }, [modelStatus, downloadProgress, setDownloadProgress, setModelStatus])
+  const handleCancel = async () => {
+    await window.api.model.cancelDownload()
+    setModelStatus('default')
+    setDownloadProgress(0)
+    setDownloadSpeed(0)
+  }
 
   return (
     <div className="space-y-4">
@@ -42,7 +109,8 @@ export function Step03Model(): React.JSX.Element {
               libraries.
             </p>
             <p className="mt-2 font-mono text-xs text-muted-foreground">
-              512-dim · ~350 MB · ViT-B/32
+              512-dim · ~650 MB · ViT-B/32
+              {device && ` · ${device.toUpperCase()}`}
             </p>
 
             {modelStatus === 'downloading' && (
@@ -54,7 +122,7 @@ export function Step03Model(): React.JSX.Element {
                   />
                 </div>
                 <p className="mt-1 font-mono text-xs text-muted-foreground">
-                  {downloadProgress}% · Downloading...
+                  {Math.round(downloadProgress)}%{downloadSpeed > 0 && ` · ${downloadSpeed} MB/s`}
                 </p>
               </div>
             )}
@@ -80,8 +148,8 @@ export function Step03Model(): React.JSX.Element {
               </Button>
             )}
             {modelStatus === 'downloading' && (
-              <Button size="sm" variant="outline" disabled>
-                Downloading...
+              <Button size="sm" variant="outline" onClick={handleCancel}>
+                Cancel
               </Button>
             )}
             {modelStatus === 'complete' && (

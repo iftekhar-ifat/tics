@@ -81,6 +81,26 @@ const api = {
       ipcRenderer.on('backend:status-changed', listener)
       return () => ipcRenderer.removeListener('backend:status-changed', listener)
     }
+  },
+  model: {
+    getStatus: () =>
+      ipcRenderer.invoke('model:get-status') as Promise<{
+        ok: boolean
+        data?: { ready: boolean; device: string }
+        message?: string
+      }>,
+    download: () =>
+      ipcRenderer.invoke('model:download') as Promise<{
+        ok: boolean
+        data?: { status: string }
+        message?: string
+      }>,
+    cancelDownload: () =>
+      ipcRenderer.invoke('model:cancel-download') as Promise<{
+        ok: boolean
+        data?: { status: string }
+        message?: string
+      }>
   }
 }
 
