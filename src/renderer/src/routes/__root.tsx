@@ -2,16 +2,21 @@ import { Outlet, createRootRoute } from '@tanstack/react-router'
 import { UpdateBanner } from '@/components/updater/update-banner'
 import { useAppStore } from '@/stores/app-store'
 import { Onboarding } from '@/components/onboarding/onboarding'
+import { SplashScreen } from '@/components/splash-screen'
 
 export const Route = createRootRoute({
   component: RootLayout
 })
 
 function RootLayout(): React.JSX.Element {
-  const { onboardingComplete, setOnboardingComplete } = useAppStore()
+  const { onboardingComplete, setOnboardingComplete, appReady } = useAppStore()
 
   const handleOnboardingComplete = () => {
     setOnboardingComplete(true)
+  }
+
+  if (!appReady) {
+    return <SplashScreen />
   }
 
   return (
