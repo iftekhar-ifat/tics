@@ -55,7 +55,7 @@ function broadcastBackendStatus(): void {
  * Poll /health until the backend responds 200 or we exhaust retries.
  * Resolves true if healthy, false if timed out.
  */
-async function waitForBackend(port: number, retries = 20, intervalMs = 300): Promise<boolean> {
+async function waitForBackend(port: number, retries = 40, intervalMs = 500): Promise<boolean> {
   for (let i = 0; i < retries; i++) {
     try {
       const res = await fetch(`http://127.0.0.1:${port}/health`)
@@ -501,11 +501,13 @@ app.whenReady().then(() => {
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
-    stopBackend()
-    app.quit()
+    setTimeout(() => {
+      stopBackend()
+      app.quit()
+    }, 500)
   }
 })
 
 app.on('before-quit', () => {
-  stopBackend()
+  setTimeout(() => stopBackend(), 500)
 })
