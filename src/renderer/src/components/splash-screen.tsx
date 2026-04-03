@@ -1,28 +1,9 @@
-import { useEffect, useState, useRef, useCallback } from 'react'
+import { useEffect, useState } from 'react'
 import { useAppStore } from '@/stores/app-store'
 
 export function SplashScreen(): React.JSX.Element {
   const [error, setError] = useState<string | null>(null)
   const { setAppReady } = useAppStore()
-  const wsRef = useRef<WebSocket | null>(null)
-
-  const connectWebSocket = useCallback(async () => {
-    try {
-      const status = await window.api.backend.getStatus()
-      if (!status.url) return null
-
-      const wsUrl = status.url.replace('http', 'ws') + '/ws'
-      const ws = new WebSocket(wsUrl)
-
-      return new Promise<WebSocket>((resolve, reject) => {
-        ws.onopen = () => resolve(ws)
-        ws.onerror = () => reject(new Error('WS error'))
-        ws.onclose = () => reject(new Error('WS closed'))
-      })
-    } catch {
-      return null
-    }
-  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -34,16 +15,8 @@ export function SplashScreen(): React.JSX.Element {
       while (retries < maxRetries && !cancelled) {
         try {
           const status = await window.api.backend.getStatus()
-          if (status.status === 'running') {
-            try {
-              wsRef.current = await connectWebSocket()
-            } catch {
-              // WS connection not critical
-            }
-
-            if (!cancelled) {
-              setAppReady(true)
-            }
+          if (status.status === 'running' && !cancelled) {
+            setAppReady(true)
             return
           }
         } catch {
@@ -63,9 +36,8 @@ export function SplashScreen(): React.JSX.Element {
 
     return () => {
       cancelled = true
-      wsRef.current?.close()
     }
-  }, [setAppReady, connectWebSocket])
+  }, [setAppReady])
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-background">

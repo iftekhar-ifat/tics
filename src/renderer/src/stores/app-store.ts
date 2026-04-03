@@ -17,7 +17,8 @@ export const useAppStore = create<AppState>()(
       setAppReady: (ready) => set({ appReady: ready })
     }),
     {
-      name: 'tics-app-state'
+      name: 'tics-app-state',
+      partialize: (state) => ({ onboardingComplete: state.onboardingComplete })
     }
   )
 )

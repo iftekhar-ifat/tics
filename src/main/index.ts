@@ -488,9 +488,11 @@ app.whenReady().then(() => {
   createWindow()
   startBackend()
 
-  void autoUpdater.checkForUpdates().catch(() => {
-    setUpdateState({ status: 'error', message: 'Silent update check failed' })
-  })
+  if (!is.dev) {
+    void autoUpdater.checkForUpdates().catch(() => {
+      setUpdateState({ status: 'error', message: 'Silent update check failed' })
+    })
+  }
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()

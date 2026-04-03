@@ -1,54 +1,15 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useOnboardingStore } from '@/stores/onboarding-store'
+import { useWebSocket } from '@/hooks/use-websocket'
 import { Button } from '@/components/ui/button'
 
 export function Step03Model(): React.JSX.Element {
   const { modelStatus, setModelStatus, downloadProgress, setDownloadProgress } =
     useOnboardingStore()
 
+  const { onMessage } = useWebSocket()
   const [device, setDevice] = useState<string>('')
   const [downloadSpeed, setDownloadSpeed] = useState<number>(0)
-  const wsRef = useRef<WebSocket | null>(null)
-
-  const connectWebSocket = useCallback(async () => {
-    try {
-      const status = await window.api.backend.getStatus()
-      if (!status.url) return
-
-      const wsUrl = status.url.replace('http', 'ws') + '/ws'
-      const ws = new WebSocket(wsUrl)
-
-      ws.onmessage = (event) => {
-        try {
-          const msg = JSON.parse(event.data)
-          if (msg.type === 'model_download') {
-            setDownloadProgress(msg.percent ?? 0)
-            setDownloadSpeed(msg.speed ?? 0)
-          }
-          if (msg.type === 'model_download_complete') {
-            setModelStatus('complete')
-            setDownloadProgress(100)
-            setDownloadSpeed(0)
-          }
-          if (msg.type === 'model_download_cancelled') {
-            setModelStatus('default')
-            setDownloadProgress(0)
-            setDownloadSpeed(0)
-          }
-        } catch {
-          // ignore non-JSON messages
-        }
-      }
-
-      ws.onclose = () => {
-        wsRef.current = null
-      }
-
-      wsRef.current = ws
-    } catch {
-      // backend not reachable yet
-    }
-  }, [setDownloadProgress, setModelStatus])
 
   useEffect(() => {
     const checkStatus = async () => {
@@ -67,13 +28,30 @@ export function Step03Model(): React.JSX.Element {
     }
 
     void checkStatus()
-    void connectWebSocket()
+  }, [setDownloadProgress, setModelStatus])
 
-    return () => {
-      wsRef.current?.close()
-      wsRef.current = null
+  useEffect(() => {
+    const handler = (data: unknown): void => {
+      const msg = data as { type?: string; percent?: number; speed?: number }
+      if (msg.type === 'model_download') {
+        setDownloadProgress(msg.percent ?? 0)
+        setDownloadSpeed(msg.speed ?? 0)
+      }
+      if (msg.type === 'model_download_complete') {
+        setModelStatus('complete')
+        setDownloadProgress(100)
+        setDownloadSpeed(0)
+      }
+      if (msg.type === 'model_download_cancelled') {
+        setModelStatus('default')
+        setDownloadProgress(0)
+        setDownloadSpeed(0)
+      }
     }
-  }, [connectWebSocket, setDownloadProgress, setModelStatus])
+
+    const unsubscribe = onMessage(handler)
+    return unsubscribe
+  }, [onMessage, setDownloadProgress, setModelStatus])
 
   const handleDownload = async () => {
     try {
