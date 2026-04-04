@@ -44,11 +44,11 @@ jobs:
       - name: Verify PyInstaller output
         run: |
           echo "Checking PyInstaller output..."
-          if (Test-Path "backend/dist/main.exe") {
-            Write-Host "SUCCESS: backend/dist/main.exe exists"
-            Get-Item "backend/dist/main.exe" | Select-Object Name, Length
+          if (Test-Path "backend/dist/ipc_bridge.exe") {
+            Write-Host "SUCCESS: backend/dist/ipc_bridge.exe exists"
+            Get-Item "backend/dist/ipc_bridge.exe" | Select-Object Name, Length
           } else {
-            Write-Host "ERROR: backend/dist/main.exe NOT FOUND"
+            Write-Host "ERROR: backend/dist/ipc_bridge.exe NOT FOUND"
             if (Test-Path "backend/dist") {
               Write-Host "Contents of backend/dist:"
               Get-ChildItem "backend/dist" -Recurse
