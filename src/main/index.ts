@@ -106,8 +106,7 @@ function startBackend(): void {
       cwd: is.dev ? join(__dirname, '../../backend') : join(process.resourcesPath, 'backend'),
       stdio: ['pipe', 'pipe', 'pipe'],
       detached: false,
-      env: { ...process.env, TICS_DATA_DIR: app.getPath('userData') },
-      shell: isWindows
+      env: { ...process.env, TICS_DATA_DIR: app.getPath('userData') }
     })
 
     backendProcess.stdout?.on('data', (data: Buffer) => {
