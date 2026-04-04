@@ -17,7 +17,7 @@ export default async function afterPack(context: AfterPackContext): Promise<void
 
   // --- Copy PyInstaller binary to resources ---
   const isWindows = context.electronPlatformName === 'win32'
-  const binaryName = isWindows ? 'main.exe' : 'main'
+  const binaryName = isWindows ? 'ipc_bridge.exe' : 'ipc_bridge'
 
   // PyInstaller --onefile --name main creates backend/dist/main.exe (directly in dist/)
   const projectRoot = join(context.appOutDir, '../../..') // out/<platform>/ -> project root
@@ -49,7 +49,7 @@ export default async function afterPack(context: AfterPackContext): Promise<void
     console.log(`[after-pack] Falling back to copying Python source files...`)
 
     const backendSrc = join(projectRoot, 'backend')
-    const filesToCopy = ['main.py', 'pyproject.toml']
+    const filesToCopy = ['main.py', 'ipc_bridge.py', 'pyproject.toml']
     for (const file of filesToCopy) {
       const src = join(backendSrc, file)
       const dest = join(backendDest, file)

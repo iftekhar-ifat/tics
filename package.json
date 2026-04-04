@@ -22,7 +22,7 @@
     "build:unpack": "pnpm run build:backend && pnpm run compile && electron-builder --win --dir",
     "build:win": "pnpm run build",
     "publish": "pnpm run build:backend && pnpm run compile && electron-builder --win --publish always",
-    "build:backend": "cd backend && uv run pyinstaller main.py --onefile --name main --clean",
+    "build:backend": "cd backend && uv run pyinstaller main.spec --clean",
     "release:patch": "pnpm version patch && git push && git push --tags",
     "release:minor": "pnpm version minor && git push && git push --tags",
     "release:major": "pnpm version major && git push && git push --tags"

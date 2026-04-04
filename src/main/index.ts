@@ -81,23 +81,33 @@ function startBackend(): void {
   const pythonCmd = isWindows ? 'python' : 'python3'
   const finalPythonCmd = useVenvPython || pythonCmd
 
-  const backendScript = is.dev
-    ? join(__dirname, '../../backend/ipc_bridge.py')
-    : join(process.resourcesPath, 'backend/ipc_bridge.py')
+  let backendScript: string
+  let args: string[]
+
+  if (is.dev) {
+    backendScript = join(__dirname, '../../backend/ipc_bridge.py')
+    args = [backendScript]
+  } else {
+    backendScript = join(process.resourcesPath, 'backend/ipc_bridge.exe')
+    args = []
+  }
 
   console.log('[Main] Starting IPC backend...')
-  console.log('[Main] Python command:', finalPythonCmd)
+  console.log('[Main] Python command:', is.dev ? finalPythonCmd : 'N/A (using exe)')
   console.log('[Main] Script:', backendScript)
 
   backendStatus = 'starting'
   broadcastBackendStatus()
 
   try {
-    backendProcess = spawn(finalPythonCmd, [backendScript], {
+    const cmd = is.dev ? finalPythonCmd : backendScript
+    const spawnArgs = is.dev ? args : []
+    backendProcess = spawn(cmd, spawnArgs, {
       cwd: is.dev ? join(__dirname, '../../backend') : join(process.resourcesPath, 'backend'),
       stdio: ['pipe', 'pipe', 'pipe'],
       detached: false,
-      env: { ...process.env, TICS_DATA_DIR: app.getPath('userData') }
+      env: { ...process.env, TICS_DATA_DIR: app.getPath('userData') },
+      shell: isWindows
     })
 
     backendProcess.stdout?.on('data', (data: Buffer) => {
