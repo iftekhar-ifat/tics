@@ -49,7 +49,7 @@ export default async function afterPack(context: AfterPackContext): Promise<void
     console.log(`[after-pack] Falling back to copying Python source files...`)
 
     const backendSrc = join(projectRoot, 'backend')
-    const filesToCopy = ['main.py', 'ipc_bridge.py', 'pyproject.toml']
+    const filesToCopy = ['ipc_bridge.py', 'pyproject.toml']
     for (const file of filesToCopy) {
       const src = join(backendSrc, file)
       const dest = join(backendDest, file)

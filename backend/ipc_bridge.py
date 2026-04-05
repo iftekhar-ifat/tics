@@ -13,6 +13,8 @@ except ImportError:
     torch = None
     psutil = None
 
+from model_manager import is_model_ready, download_model, cancel_download
+
 
 class EventEmitter:
     """Simple event emitter for push events to Electron."""
@@ -171,6 +173,16 @@ async def handle_request(request):
             "device": sys_info["device"],
         }
 
+    async def handle_model_download(_p):
+        if is_model_ready():
+            return {"status": "already_ready"}
+        asyncio.create_task(download_model(push_event))
+        return {"status": "started"}
+
+    def handle_model_cancel(_p):
+        cancel_download()
+        return {"status": "cancelled"}
+
     def raise_not_implemented():
         raise NotImplementedError(f"Method {method} is not implemented")
 
@@ -178,8 +190,8 @@ async def handle_request(request):
         "folder.scan": lambda p: scan_folder(p.get("path", "")),
         "system.getOSInfo": lambda p: get_system_info(),
         "model.getStatus": handle_model_get_status,
-        "model.download": lambda p: raise_not_implemented(),
-        "model.cancelDownload": lambda p: raise_not_implemented(),
+        "model.download": handle_model_download,
+        "model.cancelDownload": handle_model_cancel,
     }
 
     try:
