@@ -1,22 +1,29 @@
+import { useState } from 'react'
 import { useOnboardingStore } from '@/stores/onboarding-store'
 import { Button } from '@/components/ui/button'
-import { FolderOpenIcon } from '@phosphor-icons/react'
+import { FolderOpenIcon, Spinner } from '@phosphor-icons/react'
 
 export function Step01Library(): React.JSX.Element {
   const { folderInfo, setFolderInfo } = useOnboardingStore()
+  const [scanning, setScanning] = useState(false)
 
   const handleBrowseFolder = async () => {
     const result = await window.api.dialog.openDirectory()
     if (result && !result.canceled && result.filePaths.length > 0) {
       const path = result.filePaths[0]
       const name = path.split(/[/\\]/).pop() || path
-      const { imageCount, totalSize } = await window.api.folder.scanFolder(path)
-      setFolderInfo({
-        path,
-        name,
-        imageCount,
-        totalSize
-      })
+      setScanning(true)
+      try {
+        const { imageCount, totalSize } = await window.api.folder.scanFolder(path)
+        setFolderInfo({
+          path,
+          name,
+          imageCount,
+          totalSize
+        })
+      } finally {
+        setScanning(false)
+      }
     }
   }
 
@@ -60,11 +67,20 @@ export function Step01Library(): React.JSX.Element {
   return (
     <div className="flex flex-col items-center justify-center py-8">
       <div className="flex h-48 w-full max-w-sm flex-col items-center justify-center rounded-md border-2 border-dashed border-border">
-        <FolderOpenIcon className="mb-2 size-10 text-muted-foreground" />
-        <p className="text-sm">Select a folder</p>
-        <Button variant="outline" size="sm" className="mt-2" onClick={handleBrowseFolder}>
-          Browse Folder
-        </Button>
+        {scanning ? (
+          <>
+            <Spinner className="mb-2 size-10 animate-spin text-muted-foreground" />
+            <p className="text-sm">Scanning folder...</p>
+          </>
+        ) : (
+          <>
+            <FolderOpenIcon className="mb-2 size-10 text-muted-foreground" />
+            <p className="text-sm">Select a folder</p>
+            <Button variant="outline" size="sm" className="mt-2" onClick={handleBrowseFolder}>
+              Browse Folder
+            </Button>
+          </>
+        )}
       </div>
     </div>
   )

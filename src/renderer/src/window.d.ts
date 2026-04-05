@@ -15,18 +15,6 @@ type UpdateState = {
 
 type BackendStatus = {
   status: 'starting' | 'running' | 'stopped' | 'error'
-  url: string | null
-}
-
-type HttpStatusResponse = {
-  ok: boolean
-  data?: {
-    status: string
-    uptime: string
-    connected_clients: number
-    random_value: number
-  }
-  message?: string
 }
 
 interface Window {
@@ -57,8 +45,8 @@ interface Window {
     }
     backend: {
       getStatus: () => Promise<BackendStatus>
-      getHttpStatus: () => Promise<HttpStatusResponse>
       onStatusChanged: (callback: (state: BackendStatus) => void) => () => void
+      onEvent: (callback: (event: { type: string; data: unknown }) => void) => () => void
     }
     model: {
       getStatus: () => Promise<{

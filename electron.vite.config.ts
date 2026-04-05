@@ -14,10 +14,6 @@ export default defineConfig({
         '@': resolve('src/renderer/src')
       }
     },
-    plugins: [
-      tanstackRouter({ target: 'react', autoCodeSplitting: true }),
-      react(),
-      tailwindcss()
-    ]
+    plugins: [tanstackRouter({ target: 'react', autoCodeSplitting: true }), react(), tailwindcss()]
   }
 })

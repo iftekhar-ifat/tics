@@ -43,12 +43,11 @@ function broadcastUpdateState(): void {
 function broadcastBackendStatus(): void {
   if (!mainWindow) return
   mainWindow.webContents.send('backend:status-changed', {
-    status: backendStatus,
-    url: backendStatus === 'running' ? 'ipc' : null
+    status: backendStatus
   })
 }
 
-function sendIPCRequest(method: string, params: Record<string, unknown> = {}): Promise<unknown> {
+function callBackend(method: string, params: Record<string, unknown> = {}): Promise<unknown> {
   return new Promise((resolve, reject) => {
     if (!backendProcess || backendStatus !== 'running') {
       reject(new Error('Backend not running'))
@@ -64,9 +63,9 @@ function sendIPCRequest(method: string, params: Record<string, unknown> = {}): P
     setTimeout(() => {
       if (pendingRequests.has(id)) {
         pendingRequests.delete(id)
-        reject(new Error('IPC request timeout'))
+        reject(new Error(`IPC request timeout: ${method}`))
       }
-    }, 10000)
+    }, 300000)
   })
 }
 
@@ -117,16 +116,27 @@ function startBackend(): void {
         stdoutBuffer = stdoutBuffer.slice(newlineIndex + 1)
 
         if (line.trim()) {
+          if (line.includes('[IPC] Bridge started')) {
+            backendStatus = 'running'
+            broadcastBackendStatus()
+            continue
+          }
+
           console.log('[IPC stdout]:', line)
           try {
-            const response = JSON.parse(line)
-            if (response.id && pendingRequests.has(response.id)) {
-              const { resolve, reject } = pendingRequests.get(response.id)!
-              pendingRequests.delete(response.id)
-              if (response.error) {
-                reject(new Error(response.error.message))
+            const msg = JSON.parse(line)
+
+            if (msg.type && !msg.id) {
+              if (mainWindow) {
+                mainWindow.webContents.send('backend:event', msg)
+              }
+            } else if (msg.id && pendingRequests.has(msg.id)) {
+              const { resolve, reject } = pendingRequests.get(msg.id)!
+              pendingRequests.delete(msg.id)
+              if (msg.error) {
+                reject(new Error(msg.error.message))
               } else {
-                resolve(response.result)
+                resolve(msg.result)
               }
             }
           } catch {
@@ -151,13 +161,6 @@ function startBackend(): void {
       backendStatus = 'stopped'
       broadcastBackendStatus()
     })
-
-    setTimeout(() => {
-      if (backendStatus === 'starting') {
-        backendStatus = 'running'
-        broadcastBackendStatus()
-      }
-    }, 1000)
   } catch (error) {
     console.error('[Main] Failed to spawn backend:', error)
     backendStatus = 'error'
@@ -291,13 +294,8 @@ app.whenReady().then(() => {
   })
 
   ipcMain.handle('backend:get-status', () => ({
-    status: backendStatus,
-    url: backendStatus === 'running' ? 'ipc' : null
+    status: backendStatus
   }))
-
-  ipcMain.handle('backend:get-http-status', async () => {
-    return { ok: true, data: { status: backendStatus } }
-  })
 
   ipcMain.handle('dialog:open-directory', async () => {
     if (!mainWindow) return { canceled: true, filePaths: [] }
@@ -308,7 +306,7 @@ app.whenReady().then(() => {
 
   ipcMain.handle('folder:scan', async (_event, dirPath: string) => {
     try {
-      return await sendIPCRequest('folder.scan', { path: dirPath })
+      return await callBackend('folder.scan', { path: dirPath })
     } catch (error) {
       console.error('folder:scan error:', error)
       return { imageCount: 0, totalSize: 0 }
@@ -317,7 +315,7 @@ app.whenReady().then(() => {
 
   ipcMain.handle('system:get-os-info', async () => {
     try {
-      return await sendIPCRequest('system.getOSInfo')
+      return await callBackend('system.getOSInfo')
     } catch (error) {
       console.error('system:get-os-info error:', error)
       return { os: 'Unknown', device: 'cpu', deviceName: 'Unknown', memory: 'Unknown' }
@@ -326,7 +324,7 @@ app.whenReady().then(() => {
 
   ipcMain.handle('model:get-status', async () => {
     try {
-      const result = await sendIPCRequest('model.getStatus')
+      const result = await callBackend('model.getStatus')
       return { ok: true, data: result }
     } catch (error) {
       return { ok: false, message: String(error) }
@@ -335,7 +333,7 @@ app.whenReady().then(() => {
 
   ipcMain.handle('model:download', async () => {
     try {
-      const result = await sendIPCRequest('model.download')
+      const result = await callBackend('model.download')
       return { ok: true, data: result }
     } catch (error) {
       return { ok: false, message: String(error) }
@@ -344,7 +342,7 @@ app.whenReady().then(() => {
 
   ipcMain.handle('model:cancel-download', async () => {
     try {
-      const result = await sendIPCRequest('model.cancelDownload')
+      const result = await callBackend('model.cancelDownload')
       return { ok: true, data: result }
     } catch (error) {
       return { ok: false, message: String(error) }

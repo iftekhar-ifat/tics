@@ -3,7 +3,7 @@ import { UpdateBanner } from '@/components/updater/update-banner'
 import { useAppStore } from '@/stores/app-store'
 import { Onboarding } from '@/components/onboarding/onboarding'
 import { SplashScreen } from '@/components/splash-screen'
-import { WebSocketProvider } from '@/hooks/use-websocket'
+import { BackendEventsProvider } from '@/hooks/use-backend-events'
 
 export const Route = createRootRoute({
   component: RootLayout
@@ -21,7 +21,7 @@ function RootLayout(): React.JSX.Element {
   }
 
   return (
-    <WebSocketProvider>
+    <BackendEventsProvider>
       <div className="min-h-screen">
         <header className="border-b border-border">
           <nav className="mx-auto flex max-w-5xl items-center gap-6 px-4 py-3">
@@ -40,6 +40,6 @@ function RootLayout(): React.JSX.Element {
         <UpdateBanner />
         {!onboardingComplete && <Onboarding onComplete={handleOnboardingComplete} />}
       </div>
-    </WebSocketProvider>
+    </BackendEventsProvider>
   )
 }

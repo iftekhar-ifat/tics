@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useOnboardingStore } from '@/stores/onboarding-store'
-import { useWebSocket } from '@/hooks/use-websocket'
+import { useBackendEvents } from '@/hooks/use-backend-events'
 import { Button } from '@/components/ui/button'
 
 export function Step03Model(): React.JSX.Element {
   const { modelStatus, setModelStatus, downloadProgress, setDownloadProgress } =
     useOnboardingStore()
 
-  const { onMessage } = useWebSocket()
+  const { onMessage } = useBackendEvents()
   const [device, setDevice] = useState<string>('')
   const [downloadSpeed, setDownloadSpeed] = useState<number>(0)
 

@@ -9,7 +9,9 @@ interface CheckItem {
 }
 
 export function Step02Hardware(): React.JSX.Element {
-  const { setHardwareInfo, setHardwareCheckComplete, hardwareCheckComplete } = useOnboardingStore()
+  const { setHardwareInfo, setHardwareCheckComplete, hardwareCheckComplete, hardwareInfo } =
+    useOnboardingStore()
+
   const [checks, setChecks] = useState<CheckItem[]>([
     { label: 'Operating System', value: null, checked: false },
     { label: 'Inference Device', value: null, checked: false },
@@ -17,7 +19,11 @@ export function Step02Hardware(): React.JSX.Element {
   ])
 
   useEffect(() => {
-    if (hardwareCheckComplete) return
+    if (hardwareCheckComplete) {
+      return
+    }
+
+    let cancelled = false
 
     const runChecks = async () => {
       const osInfo = (await window.api.system.getOSInfo?.()) ?? {
@@ -26,6 +32,8 @@ export function Step02Hardware(): React.JSX.Element {
         deviceName: 'NVIDIA RTX 3080',
         memory: '32 GB'
       }
+
+      if (cancelled) return
 
       const newChecks: CheckItem[] = [
         { label: 'Operating System', value: osInfo.os, checked: false },
@@ -43,10 +51,14 @@ export function Step02Hardware(): React.JSX.Element {
       ]
 
       for (let i = 0; i < newChecks.length; i++) {
+        if (cancelled) return
         await new Promise((resolve) => setTimeout(resolve, 400))
+        if (cancelled) return
         newChecks[i].checked = true
         setChecks([...newChecks])
       }
+
+      if (cancelled) return
 
       const hwInfo: HardwareInfo = {
         os: osInfo.os,
@@ -59,7 +71,29 @@ export function Step02Hardware(): React.JSX.Element {
     }
 
     void runChecks()
+
+    return () => {
+      cancelled = true
+    }
   }, [hardwareCheckComplete, setHardwareCheckComplete, setHardwareInfo])
+
+  const displayChecks =
+    hardwareCheckComplete && hardwareInfo
+      ? [
+          { label: 'Operating System', value: hardwareInfo.os, checked: true },
+          {
+            label: 'Inference Device',
+            value:
+              hardwareInfo.inferenceDevice === 'cuda'
+                ? `CUDA · ${hardwareInfo.deviceName}`
+                : hardwareInfo.inferenceDevice === 'mps'
+                  ? 'Apple MPS'
+                  : `CPU · ${hardwareInfo.deviceName}`,
+            checked: true
+          },
+          { label: 'Available Memory', value: hardwareInfo.availableMemory, checked: true }
+        ]
+      : checks
 
   const getDeviceMessage = (): string => {
     const deviceCheck = checks[1]
@@ -76,7 +110,7 @@ export function Step02Hardware(): React.JSX.Element {
   return (
     <div className="space-y-4">
       <div className="space-y-3">
-        {checks.map((check) => (
+        {displayChecks.map((check) => (
           <div key={check.label} className="flex items-center gap-3">
             <div className="flex size-5 items-center justify-center rounded-sm border border-border">
               {check.checked ? (
