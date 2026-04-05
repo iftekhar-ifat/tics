@@ -5,6 +5,7 @@ import asyncio
 from pathlib import Path
 import platform
 import subprocess
+import threading
 
 try:
     import torch
@@ -13,34 +14,12 @@ except ImportError:
     torch = None
     psutil = None
 
-from model_manager import is_model_ready, download_model, cancel_download
-
-
-class EventEmitter:
-    """Simple event emitter for push events to Electron."""
-
-    def __init__(self):
-        self._listeners = {}
-
-    def on(self, event_type: str, handler):
-        if event_type not in self._listeners:
-            self._listeners[event_type] = []
-        self._listeners[event_type].append(handler)
-
-    def emit(self, event_type: str, data: dict = None):
-        if data is None:
-            data = {}
-        event = {"type": event_type, "data": data}
-        push_event(event_type, data)
-        if event_type in self._listeners:
-            for handler in self._listeners[event_type]:
-                try:
-                    handler(event)
-                except Exception as e:
-                    print(f"[EventEmitter] Handler error: {e}", file=sys.stderr)
-
-
-_event_emitter = EventEmitter()
+from model_manager import (
+    is_model_ready,
+    download_model,
+    cancel_download,
+    _delete_model_files,
+)
 
 
 def push_event(event_type: str, data: dict = None):
@@ -50,6 +29,16 @@ def push_event(event_type: str, data: dict = None):
     event = {"type": event_type, "data": data}
     sys.stdout.write(json.dumps(event) + "\n")
     sys.stdout.flush()
+
+
+async def emit_push(event: dict):
+    """Async wrapper for push events (for model_manager callback)."""
+    try:
+        event_type = event.get("type", "unknown")
+        event_data = {k: v for k, v in event.items() if k != "type"}
+        push_event(event_type, event_data)
+    except Exception as e:
+        print(f"[emit_push] Error: {e}", file=sys.stderr, flush=True)
 
 
 # Paths
@@ -151,13 +140,15 @@ _system_info_cache = None
 async def get_system_info():
     """Get system OS info (cached after first call)."""
     global _system_info_cache
-
     if _system_info_cache is not None:
         return _system_info_cache
-
     loop = asyncio.get_event_loop()
     _system_info_cache = await loop.run_in_executor(None, _get_system_info_internal)
     return _system_info_cache
+
+
+# Track active download thread
+_download_thread = None
 
 
 async def handle_request(request):
@@ -168,23 +159,37 @@ async def handle_request(request):
 
     async def handle_model_get_status(_p):
         sys_info = await get_system_info()
-        return {
-            "ready": is_model_ready(),
-            "device": sys_info["device"],
-        }
+        return {"ready": is_model_ready(), "device": sys_info["device"]}
 
     async def handle_model_download(_p):
+        global _download_thread
+
         if is_model_ready():
             return {"status": "already_ready"}
-        asyncio.create_task(download_model(push_event))
+
+        def run_download():
+            from model_manager import download_model as download
+            import asyncio
+
+            try:
+                asyncio.run(download(emit_push))
+            except Exception as e:
+                print(f"[download thread] Error: {e}", file=sys.stderr, flush=True)
+                push_event("model_download_error", {"error": str(e)})
+
+        _download_thread = threading.Thread(target=run_download, daemon=True)
+        _download_thread.start()
+
         return {"status": "started"}
 
     def handle_model_cancel(_p):
+        global _download_thread
         cancel_download()
+        if _download_thread and _download_thread.is_alive():
+            _download_thread.join(timeout=2)
+        _delete_model_files()
+        _download_thread = None
         return {"status": "cancelled"}
-
-    def raise_not_implemented():
-        raise NotImplementedError(f"Method {method} is not implemented")
 
     handlers = {
         "folder.scan": lambda p: scan_folder(p.get("path", "")),
@@ -204,12 +209,10 @@ async def handle_request(request):
                 "id": request_id,
                 "error": {"code": -32601, "message": f"Unknown method: {method}"},
             }
-    except NotImplementedError as e:
-        return {"id": request_id, "error": {"code": -32601, "message": str(e)}}
     except Exception as e:
         import traceback
 
-        traceback.print_exc()
+        traceback.print_exc(file=sys.stderr)
         return {"id": request_id, "error": {"code": -32603, "message": str(e)}}
 
 

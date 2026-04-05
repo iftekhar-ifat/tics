@@ -32,10 +32,16 @@ export function Step03Model(): React.JSX.Element {
 
   useEffect(() => {
     const handler = (data: unknown): void => {
-      const msg = data as { type?: string; percent?: number; speed?: number }
+      const msg = data as {
+        type?: string
+        data?: { percent?: number; speed?: number }
+        percent?: number
+        speed?: number
+      }
+      const eventData = msg.data || msg
       if (msg.type === 'model_download') {
-        setDownloadProgress(msg.percent ?? 0)
-        setDownloadSpeed(msg.speed ?? 0)
+        setDownloadProgress(eventData.percent ?? 0)
+        setDownloadSpeed(eventData.speed ?? 0)
       }
       if (msg.type === 'model_download_complete') {
         setModelStatus('complete')
@@ -46,6 +52,12 @@ export function Step03Model(): React.JSX.Element {
         setModelStatus('default')
         setDownloadProgress(0)
         setDownloadSpeed(0)
+      }
+      if (msg.type === 'model_download_error') {
+        setModelStatus('failed')
+        setDownloadProgress(0)
+        setDownloadSpeed(0)
+        console.error('Model download error:', eventData)
       }
     }
 

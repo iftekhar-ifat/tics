@@ -37,7 +37,7 @@ def cancel_download():
 def get_model_dir() -> Path:
     data_dir = os.environ.get("TICS_DATA_DIR", "")
     if not data_dir:
-        raise RuntimeError("TICS_DATA_DIR environment variable is not set")
+        data_dir = str(Path.home() / ".tics")
     return Path(data_dir) / "models" / "clip-vit-b32"
 
 
@@ -55,6 +55,9 @@ def _delete_model_files():
 def _download_pytorch_model(model_dir: Path):
     """Download pytorch_model.bin with streaming for granular progress. Returns (success, file_size)."""
     global _downloaded_bytes, _total_bytes, _start_time
+
+    # Ensure directory exists before trying to write
+    model_dir.mkdir(parents=True, exist_ok=True)
 
     filename = "pytorch_model.bin"
     file_path = model_dir / filename
