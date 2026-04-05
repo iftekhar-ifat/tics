@@ -58,7 +58,6 @@ function callBackend(method: string, params: Record<string, unknown> = {}): Prom
     pendingRequests.set(id, { resolve, reject })
 
     const request = JSON.stringify({ method, params, id }) + '\n'
-    console.log('[IPC] Sending request:', request.trim())
     backendProcess.stdin?.write(request)
 
     setTimeout(() => {
@@ -111,7 +110,6 @@ function startBackend(): void {
 
     backendProcess.stdout?.on('data', (data: Buffer) => {
       stdoutBuffer += data.toString()
-      console.log('[IPC] Raw stdout:', stdoutBuffer)
       let newlineIndex
       while ((newlineIndex = stdoutBuffer.indexOf('\n')) !== -1) {
         const line = stdoutBuffer.slice(0, newlineIndex)
@@ -121,25 +119,20 @@ function startBackend(): void {
           if (line.includes('[IPC] Bridge started')) {
             backendStatus = 'running'
             broadcastBackendStatus()
-            console.log('[IPC] Backend running')
             continue
           }
 
-          console.log('[IPC] Processing line:', line)
           try {
             const msg = JSON.parse(line)
-            console.log('[IPC] Parsed:', JSON.stringify(msg))
 
             // Push event (has type, no id)
             if (msg.type !== undefined && msg.id === undefined) {
-              console.log('[IPC] Push event detected:', msg.type, msg.data)
               if (mainWindow) {
                 mainWindow.webContents.send('backend:event', msg)
               }
             }
             // Response (has id)
             else if (msg.id !== undefined) {
-              console.log('[IPC] Response for id:', msg.id)
               if (pendingRequests.has(msg.id)) {
                 const { resolve, reject } = pendingRequests.get(msg.id)!
                 pendingRequests.delete(msg.id)
@@ -150,8 +143,8 @@ function startBackend(): void {
                 }
               }
             }
-          } catch (e) {
-            console.log('[IPC] Not JSON:', line.substring(0, 50))
+          } catch {
+            // Not JSON, ignore
           }
         }
       }
@@ -159,15 +152,12 @@ function startBackend(): void {
 
     backendProcess.stderr?.on('data', (data: Buffer) => {
       const stderr = data.toString()
-      console.log('[IPC stderr]:', stderr)
-
       // Parse JSON push events from stderr (for model download progress)
       const lines = stderr.split('\n').filter((l) => l.trim())
       for (const line of lines) {
         try {
           const msg = JSON.parse(line)
           if (msg.type && !msg.id) {
-            console.log('[IPC] Push event from stderr:', msg.type, msg.data)
             if (mainWindow) {
               mainWindow.webContents.send('backend:event', msg)
             }
@@ -361,12 +351,9 @@ app.whenReady().then(() => {
 
   ipcMain.handle('model:download', async () => {
     try {
-      console.log('[IPC] Calling model.download')
       const result = await callBackend('model.download')
-      console.log('[IPC] model.download result:', result)
       return { ok: true, data: result }
     } catch (error) {
-      console.error('[IPC] model.download error:', error)
       return { ok: false, message: String(error) }
     }
   })
