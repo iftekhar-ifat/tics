@@ -7,35 +7,23 @@ export function SplashScreen(): React.JSX.Element {
 
   useEffect(() => {
     let cancelled = false
-
-    const init = async (): Promise<void> => {
-      let retries = 0
-      const maxRetries = 30
-
-      while (retries < maxRetries && !cancelled) {
-        try {
-          const status = await window.api.backend.getStatus()
-          if (status.status === 'running' && !cancelled) {
-            setAppReady(true)
-            return
-          }
-        } catch {
-          // ignore
-        }
-
-        retries++
-        await new Promise((resolve) => setTimeout(resolve, 500))
-      }
-
+    const timeout = setTimeout(() => {
       if (!cancelled) {
         setError('Failed to connect to backend')
       }
-    }
+    }, 15000)
 
-    void init()
+    const unsubscribe = window.api.backend.onStatusChanged((status) => {
+      if (status.status === 'running' && !cancelled) {
+        clearTimeout(timeout)
+        setAppReady(true)
+      }
+    })
 
     return () => {
       cancelled = true
+      clearTimeout(timeout)
+      unsubscribe()
     }
   }, [setAppReady])
 
