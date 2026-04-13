@@ -1,5 +1,3 @@
-'use client'
-
 import { CaretRightIcon, FileIcon, FolderIcon, FolderOpenIcon } from '@phosphor-icons/react'
 import { AnimatePresence, motion } from 'motion/react'
 import {

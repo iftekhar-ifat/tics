@@ -1,9 +1,11 @@
-import { Outlet, createRootRoute, Link } from '@tanstack/react-router'
+import { Outlet, createRootRoute } from '@tanstack/react-router'
 import { UpdateBanner } from '@/components/updater/update-banner'
 import { useAppStore } from '@/stores/app-store'
 import { Onboarding } from '@/components/onboarding/onboarding'
 import { SplashScreen } from '@/components/splash-screen'
 import { BackendEventsProvider } from '@/hooks/use-backend-events'
+import { SidebarProvider, Sidebar, SidebarInset } from '@/components/ui/sidebar'
+import { AppSidebar } from '@/components/app-sidebar'
 
 export const Route = createRootRoute({
   component: RootLayout
@@ -22,24 +24,20 @@ function RootLayout(): React.JSX.Element {
 
   return (
     <BackendEventsProvider>
-      <div className="min-h-screen">
-        <header className="border-b border-border">
-          <nav className="mx-auto flex max-w-5xl items-center gap-6 px-4 py-3">
-            <span className="text-sm font-semibold">Tics</span>
-            <Link to="/" className="text-sm text-muted-foreground">
-              Home
-            </Link>
-            <Link to="/settings" className="text-sm text-muted-foreground">
-              Settings
-            </Link>
-          </nav>
-        </header>
-        <main className="mx-auto max-w-5xl px-4 py-6">
-          <Outlet />
-        </main>
+      <SidebarProvider defaultOpen>
+        <div className="flex min-h-screen">
+          <Sidebar collapsible="none">
+            <AppSidebar />
+          </Sidebar>
+          <SidebarInset>
+            <div className="mx-auto max-w-5xl px-4 py-6">
+              <Outlet />
+            </div>
+          </SidebarInset>
+        </div>
         <UpdateBanner />
         {!onboardingComplete && <Onboarding onComplete={handleOnboardingComplete} />}
-      </div>
+      </SidebarProvider>
     </BackendEventsProvider>
   )
 }

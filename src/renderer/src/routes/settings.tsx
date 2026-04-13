@@ -9,7 +9,7 @@ import {
   TreeProvider,
   TreeView
 } from '@/components/ui/tree'
-import { FileCodeIcon, FileTextIcon, ImageIcon } from '@phosphor-icons/react'
+import { FileCodeIcon } from '@phosphor-icons/react'
 
 export const Route = createFileRoute('/settings')({
   component: SettingsPage
@@ -92,46 +92,6 @@ function SettingsPage(): React.JSX.Element {
               </TreeNodeContent>
             </TreeNode>
           </TreeNodeContent>
-        </TreeNode>
-        <TreeNode nodeId="public">
-          <TreeNodeTrigger>
-            <TreeExpander hasChildren />
-            <TreeIcon hasChildren />
-            <TreeLabel>public</TreeLabel>
-          </TreeNodeTrigger>
-          <TreeNodeContent hasChildren>
-            <TreeNode isLast level={1} nodeId="images">
-              <TreeNodeTrigger>
-                <TreeExpander hasChildren />
-                <TreeIcon hasChildren />
-                <TreeLabel>images</TreeLabel>
-              </TreeNodeTrigger>
-              <TreeNodeContent hasChildren>
-                <TreeNode level={2} nodeId="logo.svg">
-                  <TreeNodeTrigger>
-                    <TreeExpander />
-                    <TreeIcon icon={<ImageIcon className="h-4 w-4" weight="fill" />} />
-                    <TreeLabel>logo.svg</TreeLabel>
-                  </TreeNodeTrigger>
-                </TreeNode>
-                <TreeNode isLast level={2} nodeId="hero.png">
-                  <TreeNodeTrigger>
-                    <TreeExpander />
-                    <TreeIcon icon={<ImageIcon className="h-4 w-4" />} />
-                    <TreeLabel>hero.png</TreeLabel>
-                  </TreeNodeTrigger>
-                </TreeNode>
-              </TreeNodeContent>
-            </TreeNode>
-          </TreeNodeContent>
-        </TreeNode>
-
-        <TreeNode isLast nodeId="README.md">
-          <TreeNodeTrigger>
-            <TreeExpander />
-            <TreeIcon icon={<FileTextIcon className="h-4 w-4" />} />
-            <TreeLabel>README.md</TreeLabel>
-          </TreeNodeTrigger>
         </TreeNode>
       </TreeView>
     </TreeProvider>
