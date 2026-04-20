@@ -10,6 +10,7 @@ import {
   TreeLabel,
   TreeExpander
 } from '@/components/ui/tree'
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
 import { useAppStore } from '@/stores/app-store'
 
 interface ImageFile {
@@ -167,17 +168,20 @@ export function FolderTree(): React.JSX.Element {
   }
 
   return (
-    <TreeProvider showLines showIcons selectable={false} defaultExpandedIds={expandedIds}>
-      <TreeView>
-        {fileTree.map((node, index) => (
-          <FileTreeNode
-            key={node.id}
-            node={node}
-            level={0}
-            isLast={index === fileTree.length - 1}
-          />
-        ))}
-      </TreeView>
-    </TreeProvider>
+    <ScrollArea className="h-full w-full min-h-0">
+      <TreeProvider showLines showIcons selectable={false} defaultExpandedIds={expandedIds}>
+        <TreeView>
+          {fileTree.map((node, index) => (
+            <FileTreeNode
+              key={node.id}
+              node={node}
+              level={0}
+              isLast={index === fileTree.length - 1}
+            />
+          ))}
+        </TreeView>
+      </TreeProvider>
+      <ScrollBar orientation="vertical" />
+    </ScrollArea>
   )
 }

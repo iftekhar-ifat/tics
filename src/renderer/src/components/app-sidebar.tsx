@@ -110,7 +110,7 @@ export function AppSidebar({ hardwareInfo, className }: AppSidebarProps): React.
               </button>
             </div>
           </SidebarGroupLabel>
-          <SidebarGroupContent className="overflow-auto">
+          <SidebarGroupContent className="flex-1 min-h-0">
             <FolderTree />
           </SidebarGroupContent>
         </SidebarGroup>

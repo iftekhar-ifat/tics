@@ -34,7 +34,7 @@ function RootLayout(): React.JSX.Element {
   return (
     <BackendEventsProvider>
       <SidebarProvider defaultOpen>
-        <div className="flex min-h-screen">
+        <div className="flex h-screen overflow-hidden">
           <Sidebar collapsible="none">
             <AppSidebar />
           </Sidebar>
