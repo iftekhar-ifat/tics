@@ -32,7 +32,15 @@ const api = {
       ipcRenderer.invoke('folder:scan', dirPath) as Promise<{
         imageCount: number
         totalSize: number
-      }>
+      }>,
+    listSubdirectories: (dirPath: string) =>
+      ipcRenderer.invoke('folder:list-subdirs', dirPath) as Promise<
+        { name: string; path: string }[]
+      >,
+    getAllImages: (dirPath: string) =>
+      ipcRenderer.invoke('folder:get-all-images', dirPath) as Promise<
+        { name: string; path: string; relativePath: string }[]
+      >
   },
   system: {
     getOSInfo: () =>

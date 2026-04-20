@@ -1,12 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import {
-  FolderIcon,
-  FolderOpenIcon,
-  GearIcon,
-  MagnifyingGlassIcon,
-  PlusIcon,
-  SpinnerIcon
-} from '@phosphor-icons/react'
+import { GearIcon, MagnifyingGlassIcon } from '@phosphor-icons/react'
 import { type ReactNode } from 'react'
 import {
   SidebarContent,
@@ -16,32 +9,13 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
-  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarSeparator
 } from '@/components/ui/sidebar'
-import {
-  TreeProvider,
-  TreeView,
-  TreeNode,
-  TreeNodeTrigger,
-  TreeNodeContent,
-  TreeIcon,
-  TreeLabel,
-  TreeExpander
-} from '@/components/ui/tree'
 import { cn } from '@/lib/utils'
-
-export type FolderStatus = 'idle' | 'indexed' | 'indexing' | 'new'
-
-export interface FolderData {
-  id: string
-  name: string
-  imageCount: number
-  status: FolderStatus
-  children?: FolderData[]
-}
+import { useAppStore } from '@/stores/app-store'
+import { FolderTree } from './sidebar-components/folder-tree'
 
 export interface HardwareInfo {
   device: 'cpu' | 'cuda' | 'mps'
@@ -50,73 +24,8 @@ export interface HardwareInfo {
 }
 
 interface AppSidebarProps {
-  folders?: FolderData[]
   hardwareInfo?: HardwareInfo
   className?: string
-}
-
-function FolderStatusBadge({ status }: { status: FolderStatus }) {
-  switch (status) {
-    case 'indexing':
-      return (
-        <div className="flex items-center justify-center rounded-full bg-primary/10 px-1 py-0.5">
-          <SpinnerIcon className="h-2.5 w-2.5 animate-spin text-primary" />
-        </div>
-      )
-    case 'new':
-      return (
-        <div className="flex items-center justify-center rounded-full bg-primary/10 px-1 py-0.5">
-          <PlusIcon className="h-2.5 w-2.5 text-primary" />
-        </div>
-      )
-    case 'indexed':
-      return <div className="h-2 w-2 rounded-full bg-sidebar-accent" />
-    case 'idle':
-    default:
-      return <div className="h-2 w-2 rounded-full bg-sidebar-border" />
-  }
-}
-
-function FolderTreeNode({
-  folder,
-  level = 0,
-  isLast = false
-}: {
-  folder: FolderData
-  level?: number
-  isLast?: boolean
-}) {
-  const hasChildren = folder.children && folder.children.length > 0
-
-  return (
-    <TreeNode nodeId={folder.id} level={level} isLast={isLast}>
-      <TreeNodeTrigger>
-        <TreeExpander hasChildren={hasChildren} />
-        <TreeIcon hasChildren={hasChildren}>
-          {hasChildren ? (
-            <FolderOpenIcon className="h-4 w-4" />
-          ) : (
-            <FolderIcon className="h-4 w-4" />
-          )}
-        </TreeIcon>
-        <TreeLabel>{folder.name}</TreeLabel>
-        <SidebarMenuBadge>{folder.imageCount}</SidebarMenuBadge>
-        <div className="ml-auto mr-1">
-          <FolderStatusBadge status={folder.status} />
-        </div>
-      </TreeNodeTrigger>
-      <TreeNodeContent hasChildren={hasChildren}>
-        {folder.children?.map((child, index) => (
-          <FolderTreeNode
-            key={child.id}
-            folder={child}
-            level={level + 1}
-            isLast={index === (folder.children?.length ?? 0) - 1}
-          />
-        ))}
-      </TreeNodeContent>
-    </TreeNode>
-  )
 }
 
 function NavItem({ to, icon, label }: { to: string; icon: ReactNode; label: string }) {
@@ -149,11 +58,23 @@ function HardwareStatusChip({ hardwareInfo }: { hardwareInfo?: HardwareInfo }) {
   )
 }
 
-export function AppSidebar({
-  folders = [],
-  hardwareInfo,
-  className
-}: AppSidebarProps): React.JSX.Element {
+export function AppSidebar({ hardwareInfo, className }: AppSidebarProps): React.JSX.Element {
+  const { setRootFolder } = useAppStore()
+
+  const handleChangeRootFolder = async () => {
+    const result = await window.api.dialog.openDirectory()
+    if (result && !result.canceled && result.filePaths.length > 0) {
+      const path = result.filePaths[0]
+      const name = path.split(/[/\\]/).pop() || path
+      const scanResult = await window.api.folder.scanFolder(path)
+      setRootFolder({
+        path,
+        name,
+        imageCount: scanResult.imageCount
+      })
+    }
+  }
+
   return (
     <div className={cn('flex h-full flex-col bg-sidebar', className)}>
       <SidebarHeader className="h-12">
@@ -178,19 +99,19 @@ export function AppSidebar({
         <SidebarSeparator className="my-2" />
 
         <SidebarGroup className="flex-1 overflow-hidden">
-          <SidebarGroupLabel className="h-8 px-2 text-xs">Folders</SidebarGroupLabel>
+          <SidebarGroupLabel className="h-8 px-2 text-xs">
+            <div className="flex w-full items-center justify-between">
+              <span>Folders</span>
+              <button
+                className="text-xs text-sidebar-foreground/70 hover:text-sidebar-foreground"
+                onClick={handleChangeRootFolder}
+              >
+                Change
+              </button>
+            </div>
+          </SidebarGroupLabel>
           <SidebarGroupContent className="overflow-auto">
-            <TreeProvider showLines showIcons selectable={false} defaultExpandedIds={[]}>
-              <TreeView>
-                {folders.map((folder, index) => (
-                  <FolderTreeNode
-                    key={folder.id}
-                    folder={folder}
-                    isLast={index === folders.length - 1}
-                  />
-                ))}
-              </TreeView>
-            </TreeProvider>
+            <FolderTree />
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>

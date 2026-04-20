@@ -25,6 +25,10 @@ declare global {
       }
       folder: {
         scanFolder: (dirPath: string) => Promise<{ imageCount: number; totalSize: number }>
+        listSubdirectories: (dirPath: string) => Promise<{ name: string; path: string }[]>
+        getAllImages: (
+          dirPath: string
+        ) => Promise<{ name: string; path: string; relativePath: string }[]>
       }
       updater: {
         getState: () => Promise<UpdateState>

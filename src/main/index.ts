@@ -1,6 +1,6 @@
 import { app, shell, BrowserWindow, ipcMain, dialog, session } from 'electron'
 import { join } from 'path'
-import { existsSync } from 'fs'
+import { existsSync, readdirSync } from 'fs'
 import { spawn, ChildProcess } from 'child_process'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { autoUpdater } from 'electron-updater'
@@ -328,6 +328,77 @@ app.whenReady().then(() => {
     } catch (error) {
       console.error('folder:scan error:', error)
       return { imageCount: 0, totalSize: 0 }
+    }
+  })
+
+  ipcMain.handle('folder:list-subdirs', async (_event, dirPath: string) => {
+    try {
+      if (!existsSync(dirPath)) return []
+      const entries = readdirSync(dirPath, { withFileTypes: true })
+      return entries
+        .filter((entry) => entry.isDirectory())
+        .map((entry) => ({
+          name: entry.name,
+          path: join(dirPath, entry.name)
+        }))
+    } catch (error) {
+      console.error('folder:list-subdirs error:', error)
+      return []
+    }
+  })
+
+  const IMAGE_EXTENSIONS = [
+    '.jpg',
+    '.jpeg',
+    '.png',
+    '.gif',
+    '.bmp',
+    '.webp',
+    '.svg',
+    '.ico',
+    '.tiff',
+    '.tif'
+  ]
+
+  function getAllImages(
+    dirPath: string,
+    basePath: string
+  ): { name: string; path: string; relativePath: string }[] {
+    const images: { name: string; path: string; relativePath: string }[] = []
+
+    try {
+      const entries = readdirSync(dirPath, { withFileTypes: true })
+
+      for (const entry of entries) {
+        const fullPath = join(dirPath, entry.name)
+
+        if (entry.isDirectory()) {
+          images.push(...getAllImages(fullPath, basePath))
+        } else if (entry.isFile()) {
+          const ext = entry.name.toLowerCase().slice(entry.name.lastIndexOf('.'))
+          if (IMAGE_EXTENSIONS.includes(ext)) {
+            images.push({
+              name: entry.name,
+              path: fullPath,
+              relativePath: fullPath.replace(basePath, '').replace(/^[\\/]/, '')
+            })
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error reading directory:', error)
+    }
+
+    return images
+  }
+
+  ipcMain.handle('folder:get-all-images', async (_event, dirPath: string) => {
+    try {
+      if (!existsSync(dirPath)) return []
+      return getAllImages(dirPath, dirPath)
+    } catch (error) {
+      console.error('folder:get-all-images error:', error)
+      return []
     }
   })
 

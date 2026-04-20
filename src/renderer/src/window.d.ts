@@ -27,6 +27,10 @@ interface Window {
     }
     folder: {
       scanFolder: (dirPath: string) => Promise<{ imageCount: number; totalSize: number }>
+      listSubdirectories: (dirPath: string) => Promise<{ name: string; path: string }[]>
+      getAllImages: (
+        dirPath: string
+      ) => Promise<{ name: string; path: string; relativePath: string }[]>
     }
     system: {
       getOSInfo: () => Promise<{
