@@ -7,6 +7,7 @@ import { SplashScreen } from '@/components/splash-screen'
 import { BackendEventsProvider } from '@/hooks/use-backend-events'
 import { SidebarProvider, Sidebar, SidebarInset } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/app-sidebar'
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable'
 
 export const Route = createRootRoute({
   component: RootLayout
@@ -35,14 +36,21 @@ function RootLayout(): React.JSX.Element {
     <BackendEventsProvider>
       <SidebarProvider defaultOpen>
         <div className="flex h-screen overflow-hidden">
-          <Sidebar collapsible="none">
-            <AppSidebar />
-          </Sidebar>
-          <SidebarInset>
-            <div className="mx-auto max-w-5xl px-4 py-6">
-              <Outlet />
-            </div>
-          </SidebarInset>
+          <ResizablePanelGroup orientation="horizontal">
+            <ResizablePanel defaultSize="25%" minSize="15%" maxSize="35%">
+              <Sidebar className="w-full overflow-hidden" collapsible="none">
+                <AppSidebar />
+              </Sidebar>
+            </ResizablePanel>
+            <ResizableHandle withHandle />
+            <ResizablePanel>
+              <SidebarInset>
+                <div className="mx-auto px-4 py-6">
+                  <Outlet />
+                </div>
+              </SidebarInset>
+            </ResizablePanel>
+          </ResizablePanelGroup>
         </div>
         <UpdateBanner />
         {!onboardingComplete && <Onboarding onComplete={handleOnboardingComplete} />}
