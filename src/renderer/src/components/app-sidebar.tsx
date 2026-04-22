@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { GearIcon, MagnifyingGlassIcon } from '@phosphor-icons/react'
+import { GearIcon, MagnifyingGlassIcon, SwapIcon } from '@phosphor-icons/react'
 import { type ReactNode } from 'react'
 import {
   SidebarContent,
@@ -16,6 +16,7 @@ import {
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/stores/app-store'
 import { FolderTree } from './sidebar-components/folder-tree'
+import { Button } from './ui/button'
 
 export interface HardwareInfo {
   device: 'cpu' | 'cuda' | 'mps'
@@ -87,7 +88,7 @@ export function AppSidebar({ hardwareInfo, className }: AppSidebarProps): React.
 
       <SidebarContent>
         <SidebarGroup className="p-0">
-          <SidebarGroupLabel className="h-8 px-2 text-xs">Navigation</SidebarGroupLabel>
+          <SidebarGroupLabel className="h-8 px-2">Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               <NavItem to="/" icon={<MagnifyingGlassIcon className="h-4 w-4" />} label="Search" />
@@ -99,15 +100,16 @@ export function AppSidebar({ hardwareInfo, className }: AppSidebarProps): React.
         <SidebarSeparator className="my-2" />
 
         <SidebarGroup className="flex-1 overflow-hidden">
-          <SidebarGroupLabel className="h-8 px-2 text-xs">
+          <SidebarGroupLabel className="h-8 px-2">
             <div className="flex w-full items-center justify-between">
-              <span>Folders</span>
-              <button
-                className="text-xs text-sidebar-foreground/70 hover:text-sidebar-foreground"
+              <span className="text-primary text-sm">Folders</span>
+              <Button
+                variant="ghost"
+                className="text-muted-foreground"
                 onClick={handleChangeRootFolder}
               >
-                Change
-              </button>
+                <SwapIcon /> Change
+              </Button>
             </div>
           </SidebarGroupLabel>
           <SidebarGroupContent className="flex-1 min-h-0">

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { FileIcon, FolderIcon, FolderOpenIcon, SpinnerIcon } from '@phosphor-icons/react'
+import { FolderIcon, FolderOpenIcon, ImageIcon, SpinnerIcon } from '@phosphor-icons/react'
 import {
   TreeProvider,
   TreeView,
@@ -89,18 +89,21 @@ function FileTreeNode({ node, level = 0, isLast = false }: FileTreeNodeProps): R
     <TreeNode nodeId={node.id} level={level} isLast={isLast}>
       <TreeNodeTrigger>
         <TreeExpander hasChildren={hasChildren} />
-        <TreeIcon hasChildren={hasChildren}>
-          {node.type === 'folder' ? (
-            hasChildren ? (
-              <FolderOpenIcon className="h-4 w-4" />
+        <TreeIcon
+          hasChildren={hasChildren}
+          icon={
+            node.type === 'folder' ? (
+              hasChildren ? (
+                <FolderOpenIcon className="h-4 w-4" />
+              ) : (
+                <FolderIcon className="h-4 w-4" />
+              )
             ) : (
-              <FolderIcon className="h-4 w-4" />
+              <ImageIcon className="h-4 w-4" />
             )
-          ) : (
-            <FileIcon className="h-4 w-4" />
-          )}
-        </TreeIcon>
-        <TreeLabel>{node.name}</TreeLabel>
+          }
+        />
+        <TreeLabel className="text-muted-foreground">{node.name}</TreeLabel>
       </TreeNodeTrigger>
       <TreeNodeContent hasChildren={hasChildren}>
         {node.children.map((child, index) => (
@@ -168,19 +171,22 @@ export function FolderTree(): React.JSX.Element {
   }
 
   return (
-    <ScrollArea className="h-full w-full min-h-0">
-      <TreeProvider showLines showIcons selectable={false} defaultExpandedIds={expandedIds}>
-        <TreeView>
-          {fileTree.map((node, index) => (
-            <FileTreeNode
-              key={node.id}
-              node={node}
-              level={0}
-              isLast={index === fileTree.length - 1}
-            />
-          ))}
-        </TreeView>
-      </TreeProvider>
+    <ScrollArea className="h-full min-h-0">
+      {/* This wrapper div is required ~ otherwise causes some width issue */}
+      <div>
+        <TreeProvider showLines showIcons selectable={false} defaultExpandedIds={expandedIds}>
+          <TreeView className="text-sm">
+            {fileTree.map((node, index) => (
+              <FileTreeNode
+                key={node.id}
+                node={node}
+                level={0}
+                isLast={index === fileTree.length - 1}
+              />
+            ))}
+          </TreeView>
+        </TreeProvider>
+      </div>
       <ScrollBar orientation="vertical" />
     </ScrollArea>
   )
