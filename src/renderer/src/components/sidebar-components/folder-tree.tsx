@@ -97,17 +97,20 @@ function FileTreeNode({ node, level = 0, isLast = false }: FileTreeNodeProps): R
         }}
       >
         <TreeExpander hasChildren={hasChildren} />
-        <TreeIcon hasChildren={hasChildren}>
-          {node.type === 'folder' ? (
-            hasChildren ? (
-              <FolderOpenIcon className="h-4 w-4" />
+        <TreeIcon
+          hasChildren={hasChildren}
+          icon={
+            node.type === 'folder' ? (
+              hasChildren ? (
+                <FolderOpenIcon className="h-4 w-4" />
+              ) : (
+                <FolderIcon className="h-4 w-4" />
+              )
             ) : (
-              <FolderIcon className="h-4 w-4" />
+              <ImageIcon className="h-4 w-4" />
             )
-          ) : (
-            <ImageIcon className="h-4 w-4" />
-          )}
-        </TreeIcon>
+          }
+        ></TreeIcon>
         <TreeLabel className="text-muted-foreground">{node.name}</TreeLabel>
       </TreeNodeTrigger>
       <TreeNodeContent hasChildren={hasChildren}>
