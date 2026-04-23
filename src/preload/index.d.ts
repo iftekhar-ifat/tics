@@ -23,12 +23,35 @@ declare global {
       app: {
         getVersion: () => Promise<string>
       }
+      dialog: {
+        openDirectory: () => Promise<Electron.OpenDialogReturnValue>
+      }
       folder: {
-        scanFolder: (dirPath: string) => Promise<{ imageCount: number; totalSize: number }>
-        listSubdirectories: (dirPath: string) => Promise<{ name: string; path: string }[]>
-        getAllImages: (
-          dirPath: string
-        ) => Promise<{ name: string; path: string; relativePath: string }[]>
+        scanFolder: (dirPath: string) => Promise<{
+          imageCount: number
+          totalSize: number
+        }>
+        listSubdirectories: (dirPath: string) => Promise<
+          {
+            name: string
+            path: string
+          }[]
+        >
+        getAllImages: (dirPath: string) => Promise<
+          {
+            name: string
+            path: string
+            relativePath: string
+          }[]
+        >
+      }
+      system: {
+        getOSInfo: () => Promise<{
+          os: string
+          device: string
+          deviceName: string
+          memory: string
+        }>
       }
       updater: {
         getState: () => Promise<UpdateState>
@@ -58,6 +81,9 @@ declare global {
           data?: { status: string }
           message?: string
         }>
+      }
+      file: {
+        openItem: (path: string) => Promise<void>
       }
     }
   }

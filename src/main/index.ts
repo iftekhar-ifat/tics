@@ -402,6 +402,16 @@ app.whenReady().then(() => {
     }
   })
 
+  ipcMain.handle('file:open-item', async (_event, filePath: string) => {
+    try {
+      await shell.openPath(filePath)
+      return true
+    } catch (error) {
+      console.error('file:open-item error:', error)
+      throw error
+    }
+  })
+
   ipcMain.handle('system:get-os-info', async () => {
     try {
       return await callBackend('system.getOSInfo')

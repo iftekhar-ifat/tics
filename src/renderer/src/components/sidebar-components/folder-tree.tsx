@@ -10,7 +10,8 @@ import {
   TreeLabel,
   TreeExpander
 } from '@/components/ui/tree'
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { ScrollBar } from '@/components/ui/scroll-area'
 import { useAppStore } from '@/stores/app-store'
 
 interface ImageFile {
@@ -87,22 +88,26 @@ function FileTreeNode({ node, level = 0, isLast = false }: FileTreeNodeProps): R
 
   return (
     <TreeNode nodeId={node.id} level={level} isLast={isLast}>
-      <TreeNodeTrigger>
-        <TreeExpander hasChildren={hasChildren} />
-        <TreeIcon
-          hasChildren={hasChildren}
-          icon={
-            node.type === 'folder' ? (
-              hasChildren ? (
-                <FolderOpenIcon className="h-4 w-4" />
-              ) : (
-                <FolderIcon className="h-4 w-4" />
-              )
-            ) : (
-              <ImageIcon className="h-4 w-4" />
-            )
+      <TreeNodeTrigger
+        onClick={(e) => {
+          if (node.type === 'file') {
+            e.stopPropagation()
+            window.api.file.openItem(node.path)
           }
-        />
+        }}
+      >
+        <TreeExpander hasChildren={hasChildren} />
+        <TreeIcon hasChildren={hasChildren}>
+          {node.type === 'folder' ? (
+            hasChildren ? (
+              <FolderOpenIcon className="h-4 w-4" />
+            ) : (
+              <FolderIcon className="h-4 w-4" />
+            )
+          ) : (
+            <ImageIcon className="h-4 w-4" />
+          )}
+        </TreeIcon>
         <TreeLabel className="text-muted-foreground">{node.name}</TreeLabel>
       </TreeNodeTrigger>
       <TreeNodeContent hasChildren={hasChildren}>
@@ -128,6 +133,7 @@ export function FolderTree(): React.JSX.Element {
     if (rootFolder) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setLoading(true)
+      // @ts-ignore - folder API will be available at runtime
       window.api.folder
         .getAllImages(rootFolder.path)
         .then(setImages)
@@ -171,6 +177,7 @@ export function FolderTree(): React.JSX.Element {
   }
 
   return (
+    // [&>div>div]:!block is required for file name truncate
     <ScrollArea className="h-full min-h-0 [&>div>div]:!block">
       <TreeProvider showLines showIcons selectable={false} defaultExpandedIds={expandedIds}>
         <TreeView className="p-1 text-sm">

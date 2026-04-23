@@ -69,5 +69,8 @@ interface Window {
         message?: string
       }>
     }
+    file: {
+      openItem: (path: string) => Promise<void>
+    }
   }
 }

@@ -105,6 +105,9 @@ const api = {
         data?: { status: string }
         message?: string
       }>
+  },
+  file: {
+    openItem: (path: string) => ipcRenderer.invoke('file:open-item', path) as Promise<void>
   }
 }
 
