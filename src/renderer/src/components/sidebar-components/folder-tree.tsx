@@ -171,22 +171,19 @@ export function FolderTree(): React.JSX.Element {
   }
 
   return (
-    <ScrollArea className="h-full min-h-0">
-      {/* This wrapper div is required ~ otherwise causes some width issue */}
-      <div>
-        <TreeProvider showLines showIcons selectable={false} defaultExpandedIds={expandedIds}>
-          <TreeView className="text-sm">
-            {fileTree.map((node, index) => (
-              <FileTreeNode
-                key={node.id}
-                node={node}
-                level={0}
-                isLast={index === fileTree.length - 1}
-              />
-            ))}
-          </TreeView>
-        </TreeProvider>
-      </div>
+    <ScrollArea className="h-full min-h-0 [&>div>div]:!block">
+      <TreeProvider showLines showIcons selectable={false} defaultExpandedIds={expandedIds}>
+        <TreeView className="p-1 text-sm">
+          {fileTree.map((node, index) => (
+            <FileTreeNode
+              key={node.id}
+              node={node}
+              level={0}
+              isLast={index === fileTree.length - 1}
+            />
+          ))}
+        </TreeView>
+      </TreeProvider>
       <ScrollBar orientation="vertical" />
     </ScrollArea>
   )
