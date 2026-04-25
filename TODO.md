@@ -1,2 +1,3 @@
 - [ ] Make the file indexing functioning
-- [ ] Sidebar change issue while changing route
+- [ ] Settings Page
+- [x] Sidebar change issue while changing route

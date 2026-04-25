@@ -22,9 +22,9 @@ function RootLayout(): React.JSX.Element {
   return (
     <BackendEventsProvider>
       <SidebarProvider defaultOpen>
-        <div className="flex h-screen overflow-hidden">
+        <div className="flex h-screen w-full overflow-hidden">
           <ResizablePanelGroup orientation="horizontal">
-            <ResizablePanel defaultSize="25%" minSize="15%" maxSize="35%">
+            <ResizablePanel defaultSize="20%" minSize="20%" maxSize="35%">
               <Sidebar className="w-full overflow-hidden" collapsible="none">
                 <AppSidebar />
               </Sidebar>
