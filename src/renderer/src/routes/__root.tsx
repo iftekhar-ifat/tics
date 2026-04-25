@@ -1,7 +1,6 @@
 import { Outlet, createRootRoute } from '@tanstack/react-router'
 import { UpdateBanner } from '@/components/updater/update-banner'
 import { useAppStore } from '@/stores/app-store'
-import { useOnboardingStore } from '@/stores/onboarding-store'
 import { Onboarding } from '@/components/onboarding/onboarding'
 import { SplashScreen } from '@/components/splash-screen'
 import { BackendEventsProvider } from '@/hooks/use-backend-events'
@@ -14,19 +13,7 @@ export const Route = createRootRoute({
 })
 
 function RootLayout(): React.JSX.Element {
-  const { onboardingComplete, setOnboardingComplete, setRootFolder, appReady } = useAppStore()
-  const { folderInfo } = useOnboardingStore()
-
-  const handleOnboardingComplete = () => {
-    if (folderInfo) {
-      setRootFolder({
-        path: folderInfo.path,
-        name: folderInfo.name,
-        imageCount: folderInfo.imageCount
-      })
-    }
-    setOnboardingComplete(true)
-  }
+  const { appReady, onboardingComplete } = useAppStore()
 
   if (!appReady) {
     return <SplashScreen />
@@ -53,7 +40,7 @@ function RootLayout(): React.JSX.Element {
           </ResizablePanelGroup>
         </div>
         <UpdateBanner />
-        {!onboardingComplete && <Onboarding onComplete={handleOnboardingComplete} />}
+        {!onboardingComplete && <Onboarding />}
       </SidebarProvider>
     </BackendEventsProvider>
   )

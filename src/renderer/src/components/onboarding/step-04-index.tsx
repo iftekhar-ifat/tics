@@ -1,19 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useOnboardingStore } from '@/stores/onboarding-store'
+import { useAppStore } from '@/stores/app-store'
 import { Button } from '@/components/ui/button'
 
-interface Step04IndexProps {
-  onComplete: () => void
-}
-
-export function Step04Index({ onComplete }: Step04IndexProps): React.JSX.Element {
-  const {
-    folderInfo,
-    indexingProgress,
-    setIndexingProgress,
-    indexingComplete,
-    setIndexingComplete
-  } = useOnboardingStore()
+export function Step04Index(): React.JSX.Element {
+  const { setIndexingProgress, setIndexingComplete, completeOnboarding } = useOnboardingStore()
+  const folderInfo = useAppStore((s) => s.rootFolder)
+  const indexingProgress = useAppStore((s) => s.indexingProgress)
+  const indexingComplete = useAppStore((s) => s.indexingComplete)
   const [isIndexing, setIsIndexing] = useState(false)
 
   const totalImages = folderInfo?.imageCount ?? 3421
@@ -24,11 +18,11 @@ export function Step04Index({ onComplete }: Step04IndexProps): React.JSX.Element
   }
 
   const handleSkip = () => {
-    onComplete()
+    completeOnboarding()
   }
 
   const handleContinue = () => {
-    onComplete()
+    completeOnboarding()
   }
 
   useEffect(() => {
@@ -66,7 +60,7 @@ export function Step04Index({ onComplete }: Step04IndexProps): React.JSX.Element
           {indexingComplete ? ' · Done' : ` · ${percentage}%`}
         </p>
         {indexingComplete ? (
-          <Button onClick={onComplete}>Go to App</Button>
+          <Button onClick={completeOnboarding}>Go to App</Button>
         ) : (
           <button
             className="text-xs text-muted-foreground hover:text-foreground"

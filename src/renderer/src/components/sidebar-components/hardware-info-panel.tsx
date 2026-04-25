@@ -1,3 +1,4 @@
+import { useAppStore } from '@/stores/app-store'
 import { useOnboardingStore } from '@/stores/onboarding-store'
 import {
   CpuIcon,
@@ -29,7 +30,7 @@ function OsIcon({ os }: { os: string }) {
 }
 
 export function HardwareInfoPanel() {
-  const hardwareInfo = useOnboardingStore((s) => s.hardwareInfo)
+  const hardwareInfo = useAppStore((s) => s.hardwareInfo)
   const reset = useOnboardingStore((s) => s.reset)
   const [timedOut, setTimedOut] = useState(false)
 

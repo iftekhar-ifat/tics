@@ -38,7 +38,7 @@ function NavItem({ to, icon, label }: { to: string; icon: ReactNode; label: stri
 }
 
 export function AppSidebar({ className }: AppSidebarProps): React.JSX.Element {
-  const { setRootFolder } = useAppStore()
+    const setRootFolder = useAppStore((s) => s.setRootFolder)
 
   const handleChangeRootFolder = async () => {
     const result = await window.api.dialog.openDirectory()
@@ -49,7 +49,8 @@ export function AppSidebar({ className }: AppSidebarProps): React.JSX.Element {
       setRootFolder({
         path,
         name,
-        imageCount: scanResult.imageCount
+        imageCount: scanResult.imageCount,
+        totalSize: scanResult.totalSize
       })
     }
   }
@@ -85,8 +86,8 @@ export function AppSidebar({ className }: AppSidebarProps): React.JSX.Element {
 
         <SidebarSeparator className="my-2" />
 
-        <SidebarGroup>
-          <SidebarGroupContent>
+        <SidebarGroup className="flex-1 overflow-hidden">
+          <SidebarGroupContent className="flex-1 min-h-0">
             <SidebarMenu>
               <div>Hello</div>
             </SidebarMenu>

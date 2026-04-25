@@ -1,33 +1,21 @@
 import { create } from 'zustand'
+import { useAppStore } from './app-store'
 
-type ModelStatus = 'default' | 'downloading' | 'failed' | 'complete'
-type InferenceDevice = 'mps' | 'cuda' | 'cpu'
-
-interface FolderInfo {
+export interface FolderInfo {
   path: string
   name: string
   imageCount: number
   totalSize: number
 }
 
-interface HardwareInfo {
+export type InferenceDevice = 'mps' | 'cuda' | 'cpu'
+export type ModelStatus = 'default' | 'downloading' | 'failed' | 'complete'
+
+export interface HardwareInfo {
   os: string
   inferenceDevice: InferenceDevice
   deviceName: string
   availableMemory: string
-}
-
-interface OnboardingState {
-  currentStep: number
-  folderInfo: FolderInfo | null
-  hardwareInfo: HardwareInfo | null
-  hardwareCheckComplete: boolean
-  selectedModel: string
-  modelStatus: ModelStatus
-  downloadProgress: number
-  indexingProgress: number
-  indexingComplete: boolean
-  onboardingComplete: boolean
 }
 
 interface OnboardingActions {
@@ -35,7 +23,7 @@ interface OnboardingActions {
   nextStep: () => void
   prevStep: () => void
   setFolderInfo: (info: FolderInfo | null) => void
-  setHardwareInfo: (info: HardwareInfo) => void
+  setHardwareInfo: (info: HardwareInfo | null) => void
   setHardwareCheckComplete: (complete: boolean) => void
   setModelStatus: (status: ModelStatus) => void
   setDownloadProgress: (progress: number) => void
@@ -45,38 +33,31 @@ interface OnboardingActions {
   reset: () => void
 }
 
-const initialState: OnboardingState = {
-  currentStep: 1,
-  folderInfo: null,
-  hardwareInfo: null,
-  hardwareCheckComplete: false,
-  selectedModel: 'clip-vit-b-32',
-  modelStatus: 'default',
-  downloadProgress: 0,
-  indexingProgress: 0,
-  indexingComplete: false,
-  onboardingComplete: false
-}
+export const useOnboardingStore = create<OnboardingActions>()(() => ({
+  setStep: (step) => useAppStore.setState({ currentStep: step }),
+  nextStep: () =>
+    useAppStore.setState((state) => ({
+      currentStep: Math.min((state.currentStep || 1) + 1, 4),
+    })),
+  prevStep: () =>
+    useAppStore.setState((state) => ({
+      currentStep: Math.max((state.currentStep || 1) - 1, 1),
+    })),
 
-export const useOnboardingStore = create<OnboardingState & OnboardingActions>((set) => ({
-  ...initialState,
+  setFolderInfo: (info) => useAppStore.setState({ rootFolder: info }),
+  setHardwareInfo: (info) => useAppStore.setState({ hardwareInfo: info }),
+  setHardwareCheckComplete: (complete) =>
+    useAppStore.setState({ hardwareCheckComplete: complete }),
 
-  setStep: (step) => set({ currentStep: step }),
-  nextStep: () => set((state) => ({ currentStep: Math.min(state.currentStep + 1, 4) })),
-  prevStep: () => set((state) => ({ currentStep: Math.max(state.currentStep - 1, 1) })),
+  setModelStatus: (status) => useAppStore.setState({ modelStatus: status }),
+  setDownloadProgress: (progress) =>
+    useAppStore.setState({ downloadProgress: progress }),
 
-  setFolderInfo: (info) => set({ folderInfo: info }),
-  setHardwareInfo: (info) => set({ hardwareInfo: info }),
-  setHardwareCheckComplete: (complete) => set({ hardwareCheckComplete: complete }),
+  setIndexingProgress: (progress) =>
+    useAppStore.setState({ indexingProgress: progress }),
+  setIndexingComplete: (complete) =>
+    useAppStore.setState({ indexingComplete: complete }),
 
-  setModelStatus: (status) => set({ modelStatus: status }),
-  setDownloadProgress: (progress) => set({ downloadProgress: progress }),
-
-  setIndexingProgress: (progress) => set({ indexingProgress: progress }),
-  setIndexingComplete: (complete) => set({ indexingComplete: complete }),
-
-  completeOnboarding: () => set({ onboardingComplete: true }),
-  reset: () => set(initialState)
+  completeOnboarding: () => useAppStore.setState({ onboardingComplete: true }),
+  reset: () => useAppStore.getState().resetOnboarding(),
 }))
-
-export type { FolderInfo, HardwareInfo, ModelStatus, InferenceDevice }

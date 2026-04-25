@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { useOnboardingStore } from '@/stores/onboarding-store'
+import { useAppStore } from '@/stores/app-store'
 import { Button } from '@/components/ui/button'
 import { FolderOpenIcon, Spinner } from '@phosphor-icons/react'
 
 export function Step01Library(): React.JSX.Element {
-  const { folderInfo, setFolderInfo } = useOnboardingStore()
+  const { setFolderInfo } = useOnboardingStore()
+  const folderInfo = useAppStore((s) => s.rootFolder)
   const [scanning, setScanning] = useState(false)
 
   const handleBrowseFolder = async () => {

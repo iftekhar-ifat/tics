@@ -1,22 +1,21 @@
 import { useOnboardingStore } from '@/stores/onboarding-store'
+import { useAppStore } from '@/stores/app-store'
 import { Step01Library } from './step-01-library'
 import { Step02Hardware } from './step-02-hardware'
 import { Step03Model } from './step-03-model'
 import { Step04Index } from './step-04-index'
 import { Button } from '@/components/ui/button'
 
-interface OnboardingProps {
-  onComplete: () => void
-}
-
-export function Onboarding({ onComplete }: OnboardingProps): React.JSX.Element {
-  const { currentStep, nextStep, prevStep, folderInfo, hardwareCheckComplete, modelStatus } =
-    useOnboardingStore()
+export function Onboarding(): React.JSX.Element {
+  const { nextStep, prevStep } = useOnboardingStore()
+    const currentStep = useAppStore((s) => s.currentStep)
+    const hardwareCheckComplete = useAppStore((s) => s.hardwareCheckComplete)
+  const modelStatus = useAppStore((s) => s.modelStatus)
 
   const canProceed = (): boolean => {
     switch (currentStep) {
       case 1:
-        return folderInfo !== null
+        return useAppStore.getState().rootFolder !== null
       case 2:
         return hardwareCheckComplete
       case 3:
@@ -37,7 +36,7 @@ export function Onboarding({ onComplete }: OnboardingProps): React.JSX.Element {
       case 3:
         return <Step03Model />
       case 4:
-        return <Step04Index onComplete={onComplete} />
+        return <Step04Index />
       default:
         return null
     }

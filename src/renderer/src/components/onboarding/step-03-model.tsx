@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useOnboardingStore } from '@/stores/onboarding-store'
+import { useAppStore } from '@/stores/app-store'
 import { useBackendEvents } from '@/hooks/use-backend-events'
 import { Button } from '@/components/ui/button'
 
 export function Step03Model(): React.JSX.Element {
-  const { modelStatus, setModelStatus, downloadProgress, setDownloadProgress } =
-    useOnboardingStore()
+  const { setModelStatus, setDownloadProgress } = useOnboardingStore()
+  const modelStatus = useAppStore((s) => s.modelStatus)
+  const downloadProgress = useAppStore((s) => s.downloadProgress)
 
   const { onMessage } = useBackendEvents()
   const [device, setDevice] = useState<string>('')

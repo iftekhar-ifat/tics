@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
-import { useOnboardingStore, type HardwareInfo } from '@/stores/onboarding-store'
+import { useOnboardingStore } from '@/stores/onboarding-store'
+import { useAppStore } from '@/stores/app-store'
 import { Check, Spinner } from '@phosphor-icons/react'
+import type { HardwareInfo } from '@/stores/onboarding-store'
 
 interface CheckItem {
   label: string
@@ -9,8 +11,9 @@ interface CheckItem {
 }
 
 export function Step02Hardware(): React.JSX.Element {
-  const { setHardwareInfo, setHardwareCheckComplete, hardwareCheckComplete, hardwareInfo } =
-    useOnboardingStore()
+  const { setHardwareInfo, setHardwareCheckComplete } = useOnboardingStore()
+  const hardwareCheckComplete = useAppStore((s) => s.hardwareCheckComplete)
+  const hardwareInfo = useAppStore((s) => s.hardwareInfo)
 
   const [checks, setChecks] = useState<CheckItem[]>([
     { label: 'Operating System', value: null, checked: false },
