@@ -38,26 +38,22 @@ export const useOnboardingStore = create<OnboardingActions>()(() => ({
   setStep: (step) => useAppStore.setState({ currentStep: step }),
   nextStep: () =>
     useAppStore.setState((state) => ({
-      currentStep: Math.min((state.currentStep || 1) + 1, 4),
+      currentStep: Math.min((state.currentStep || 1) + 1, 4)
     })),
   prevStep: () =>
     useAppStore.setState((state) => ({
-      currentStep: Math.max((state.currentStep || 1) - 1, 1),
+      currentStep: Math.max((state.currentStep || 1) - 1, 1)
     })),
 
   setFolderInfo: (info) => useAppStore.setState({ rootFolder: info }),
   setHardwareInfo: (info) => useAppStore.setState({ hardwareInfo: info }),
-  setHardwareCheckComplete: (complete) =>
-    useAppStore.setState({ hardwareCheckComplete: complete }),
+  setHardwareCheckComplete: (complete) => useAppStore.setState({ hardwareCheckComplete: complete }),
 
   setModelStatus: (status) => useAppStore.setState({ modelStatus: status }),
-  setDownloadProgress: (progress) =>
-    useAppStore.setState({ downloadProgress: progress }),
+  setDownloadProgress: (progress) => useAppStore.setState({ downloadProgress: progress }),
 
-  setIndexingProgress: (progress) =>
-    useAppStore.setState({ indexingProgress: progress }),
-  setIndexingComplete: (complete) =>
-    useAppStore.setState({ indexingComplete: complete }),
+  setIndexingProgress: (progress) => useAppStore.setState({ indexingProgress: progress }),
+  setIndexingComplete: (complete) => useAppStore.setState({ indexingComplete: complete }),
 
   completeOnboarding: () => useAppStore.setState({ onboardingComplete: true }),
   reset: () => useAppStore.getState().resetOnboarding(),

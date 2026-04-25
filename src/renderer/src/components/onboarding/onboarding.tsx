@@ -8,8 +8,8 @@ import { Button } from '@/components/ui/button'
 
 export function Onboarding(): React.JSX.Element {
   const { nextStep, prevStep } = useOnboardingStore()
-    const currentStep = useAppStore((s) => s.currentStep)
-    const hardwareCheckComplete = useAppStore((s) => s.hardwareCheckComplete)
+  const currentStep = useAppStore((s) => s.currentStep)
+  const hardwareCheckComplete = useAppStore((s) => s.hardwareCheckComplete)
   const modelStatus = useAppStore((s) => s.modelStatus)
 
   const canProceed = (): boolean => {

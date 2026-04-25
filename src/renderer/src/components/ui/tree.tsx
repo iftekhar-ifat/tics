@@ -25,9 +25,9 @@ type TreeContextType = {
   animateExpand?: boolean
 }
 
-const TreeContext = createContext<TreeContextType | undefined>(undefined)
+export const TreeContext = createContext<TreeContextType | undefined>(undefined)
 
-const useTree = () => {
+export const useTree = () => {
   const context = useContext(TreeContext)
   if (!context) {
     throw new Error('Tree components must be used within a TreeProvider')

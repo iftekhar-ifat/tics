@@ -85,8 +85,8 @@ export const useAppStore = create<AppState>()(
           modelStatus: 'default',
           downloadProgress: 0,
           indexingProgress: 0,
-          indexingComplete: false,
-        }),
+          indexingComplete: false
+        })
     }),
     {
       name: 'tics-app-state',
@@ -100,8 +100,8 @@ export const useAppStore = create<AppState>()(
         modelStatus: state.modelStatus,
         downloadProgress: state.downloadProgress,
         indexingProgress: state.indexingProgress,
-        indexingComplete: state.indexingComplete,
-      }),
+        indexingComplete: state.indexingComplete
+      })
     }
   )
 )
