@@ -31,6 +31,7 @@ interface OnboardingActions {
   setIndexingComplete: (complete: boolean) => void
   completeOnboarding: () => void
   reset: () => void
+  detectHardware: () => Promise<void>
 }
 
 export const useOnboardingStore = create<OnboardingActions>()(() => ({
@@ -60,4 +61,19 @@ export const useOnboardingStore = create<OnboardingActions>()(() => ({
 
   completeOnboarding: () => useAppStore.setState({ onboardingComplete: true }),
   reset: () => useAppStore.getState().resetOnboarding(),
+  detectHardware: async () => {
+    const osInfo = (await window.api.system.getOSInfo?.()) ?? {
+      os: 'Windows 11',
+      device: 'cuda',
+      deviceName: 'NVIDIA RTX 3080',
+      memory: '32 GB'
+    }
+    const hwInfo: HardwareInfo = {
+      os: osInfo.os,
+      inferenceDevice: osInfo.device as InferenceDevice,
+      deviceName: osInfo.deviceName,
+      availableMemory: osInfo.memory
+    }
+    useAppStore.setState({ hardwareInfo: hwInfo, hardwareCheckComplete: true })
+  }
 }))

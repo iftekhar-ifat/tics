@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useOnboardingStore } from '@/stores/onboarding-store'
 import { useAppStore } from '@/stores/app-store'
-import { Check, Spinner } from '@phosphor-icons/react'
+import { CheckIcon, SpinnerIcon } from '@phosphor-icons/react'
 import type { HardwareInfo } from '@/stores/onboarding-store'
 
 interface CheckItem {
@@ -117,9 +117,9 @@ export function Step02Hardware(): React.JSX.Element {
           <div key={check.label} className="flex items-center gap-3">
             <div className="flex size-5 items-center justify-center rounded-sm border border-border">
               {check.checked ? (
-                <Check className="size-3 text-primary" weight="bold" />
+                <CheckIcon className="size-3 text-primary" weight="bold" />
               ) : (
-                <Spinner className="size-3 animate-spin text-muted-foreground" />
+                <SpinnerIcon className="size-3 animate-spin text-muted-foreground" />
               )}
             </div>
             <div className="flex-1">
