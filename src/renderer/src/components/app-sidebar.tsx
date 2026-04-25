@@ -116,7 +116,7 @@ export function AppSidebar({ className }: AppSidebarProps): React.JSX.Element {
 
       <SidebarSeparator />
 
-      <SidebarFooter>
+      <SidebarFooter className="h-24">
         <HardwareInfoPanel />
       </SidebarFooter>
     </div>
