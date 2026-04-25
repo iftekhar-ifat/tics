@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { GearIcon, MagnifyingGlassIcon, SwapIcon } from '@phosphor-icons/react'
+import { GearIcon, HouseIcon, SwapIcon } from '@phosphor-icons/react'
 import { type ReactNode } from 'react'
 import {
   SidebarContent,
@@ -17,15 +17,10 @@ import { cn } from '@/lib/utils'
 import { useAppStore } from '@/stores/app-store'
 import { FolderTree } from './sidebar-components/folder-tree'
 import { Button } from './ui/button'
-
-export interface HardwareInfo {
-  device: 'cpu' | 'cuda' | 'mps'
-  throughput: number | null
-  totalIndexed: number
-}
+import TicsLogo from '@/assets/logo-sidebar.svg'
+import { HardwareInfoPanel } from './sidebar-components/hardware-info-panel'
 
 interface AppSidebarProps {
-  hardwareInfo?: HardwareInfo
   className?: string
 }
 
@@ -35,31 +30,14 @@ function NavItem({ to, icon, label }: { to: string; icon: ReactNode; label: stri
       <SidebarMenuButton asChild>
         <Link to={to}>
           {icon}
-          <span>{label}</span>
+          <span className="text-sm">{label}</span>
         </Link>
       </SidebarMenuButton>
     </SidebarMenuItem>
   )
 }
 
-function HardwareStatusChip({ hardwareInfo }: { hardwareInfo?: HardwareInfo }) {
-  const deviceLabel = hardwareInfo?.device.toUpperCase() ?? '—'
-  const throughput = hardwareInfo?.throughput ?? '—'
-  const totalIndexed = hardwareInfo?.totalIndexed?.toLocaleString() ?? '0'
-
-  return (
-    <div className="flex w-full items-center gap-2 text-xs text-sidebar-foreground">
-      <div className="flex items-center gap-1 rounded-none bg-sidebar-accent px-1.5 py-0.5 text-[10px] font-medium">
-        {deviceLabel}
-      </div>
-      <span className="text-sidebar-foreground/70">{throughput} img/s</span>
-      <span className="text-sidebar-foreground/50">|</span>
-      <span className="text-sidebar-foreground/70">{totalIndexed} indexed</span>
-    </div>
-  )
-}
-
-export function AppSidebar({ hardwareInfo, className }: AppSidebarProps): React.JSX.Element {
+export function AppSidebar({ className }: AppSidebarProps): React.JSX.Element {
   const { setRootFolder } = useAppStore()
 
   const handleChangeRootFolder = async () => {
@@ -78,21 +56,39 @@ export function AppSidebar({ hardwareInfo, className }: AppSidebarProps): React.
 
   return (
     <div className={cn('flex h-full flex-col bg-sidebar', className)}>
-      <SidebarHeader className="h-12">
-        <div className="flex items-center px-2">
-          <span className="text-sm font-semibold text-sidebar-foreground">Tics</span>
+      <SidebarHeader className="h-24">
+        <div className="flex h-full flex-col items-center justify-center gap-1 px-2">
+          <div className="flex items-center justify-center gap-2">
+            <div className="w-12 h-12 flex items-center justify-center">
+              <img src={TicsLogo} alt="Tics Logo" className="w-full h-full object-contain" />
+            </div>
+            <span className="font-mono text-xl font-bold tracking-widest">TICS</span>
+          </div>
+
+          <span className="font-mono text-[10px] text-muted-foreground tracking-wide">
+            Text-Image-Context-Search
+          </span>
         </div>
       </SidebarHeader>
 
-      <SidebarSeparator />
+      <SidebarSeparator className="my-2" />
 
       <SidebarContent>
-        <SidebarGroup className="p-0">
-          <SidebarGroupLabel className="h-8 px-2">Navigation</SidebarGroupLabel>
+        <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              <NavItem to="/" icon={<MagnifyingGlassIcon className="h-4 w-4" />} label="Search" />
-              <NavItem to="/settings" icon={<GearIcon className="h-4 w-4" />} label="Settings" />
+              <NavItem to="/" icon={<HouseIcon />} label="Home" />
+              <NavItem to="/settings" icon={<GearIcon />} label="Settings" />
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarSeparator className="my-2" />
+
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <div>Hello</div>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -120,8 +116,8 @@ export function AppSidebar({ hardwareInfo, className }: AppSidebarProps): React.
 
       <SidebarSeparator />
 
-      <SidebarFooter className="h-10">
-        <HardwareStatusChip hardwareInfo={hardwareInfo} />
+      <SidebarFooter>
+        <HardwareInfoPanel />
       </SidebarFooter>
     </div>
   )
