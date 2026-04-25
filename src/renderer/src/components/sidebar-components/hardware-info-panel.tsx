@@ -7,7 +7,7 @@ import {
   SpinnerIcon,
   GraphicsCardIcon,
   WarningIcon,
-  RepeatIcon
+  ArrowCounterClockwiseIcon
 } from '@phosphor-icons/react'
 import type { InferenceDevice } from '@/stores/onboarding-store'
 import { useEffect, useState } from 'react'
@@ -44,7 +44,7 @@ export function HardwareInfoPanel() {
             <p className="text-muted-foreground leading-relaxed">Try to detect hardware.</p>
           </div>
           <Button variant="outline" size="sm" onClick={detect} className="flex items-center gap-1">
-            <RepeatIcon size={16} />
+            <ArrowCounterClockwiseIcon size={16} />
             Detect
           </Button>
         </div>

@@ -19,6 +19,7 @@ import { FolderTree } from './sidebar-components/folder-tree'
 import { Button } from './ui/button'
 import TicsLogo from '@/assets/logo-sidebar.svg'
 import { HardwareInfoPanel } from './sidebar-components/hardware-info-panel'
+import { IndexingStatusPanel } from './sidebar-components/indexing-status-panel'
 
 interface AppSidebarProps {
   className?: string
@@ -89,7 +90,7 @@ export function AppSidebar({ className }: AppSidebarProps): React.JSX.Element {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              <div>Hello</div>
+              <IndexingStatusPanel />
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -97,7 +98,7 @@ export function AppSidebar({ className }: AppSidebarProps): React.JSX.Element {
         <SidebarSeparator className="my-2" />
 
         <SidebarGroup className="flex-1 overflow-hidden">
-          <SidebarGroupLabel className="h-8 px-2">
+          <SidebarGroupLabel className="h-8">
             <div className="flex w-full items-center justify-between">
               <span className="text-primary text-sm">Folders</span>
               <Button
