@@ -181,7 +181,7 @@ export function FolderTree(): React.JSX.Element {
 
   return (
     // [&>div>div]:!block is required for file name truncate
-    <ScrollArea className="h-full min-h-0 [&>div>div]:!block">
+    <ScrollArea className="h-full min-h-0 [&>div>div]:block!">
       <TreeProvider showLines showIcons selectable={false} defaultExpandedIds={expandedIds}>
         <TreeView className="p-1 text-sm">
           {fileTree.map((node, index) => (
