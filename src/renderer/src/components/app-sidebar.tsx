@@ -1,4 +1,4 @@
-import { Link } from '@tanstack/react-router'
+import { Link, useLocation } from '@tanstack/react-router'
 import { GearIcon, HouseIcon, SwapIcon } from '@phosphor-icons/react'
 import { type ReactNode } from 'react'
 import {
@@ -26,9 +26,12 @@ interface AppSidebarProps {
 }
 
 function NavItem({ to, icon, label }: { to: string; icon: ReactNode; label: string }) {
+  const location = useLocation()
+  const isActive = location.pathname === to
+
   return (
     <SidebarMenuItem>
-      <SidebarMenuButton asChild>
+      <SidebarMenuButton asChild isActive={isActive}>
         <Link to={to}>
           {icon}
           <span className="text-sm">{label}</span>
