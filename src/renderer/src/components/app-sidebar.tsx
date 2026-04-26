@@ -1,5 +1,5 @@
 import { Link, useLocation } from '@tanstack/react-router'
-import { GearIcon, HouseIcon, SwapIcon } from '@phosphor-icons/react'
+import { GearSixIcon, HouseIcon, SwapIcon } from '@phosphor-icons/react'
 import { type ReactNode } from 'react'
 import {
   SidebarContent,
@@ -83,7 +83,7 @@ export function AppSidebar({ className }: AppSidebarProps): React.JSX.Element {
           <SidebarGroupContent>
             <SidebarMenu>
               <NavItem to="/" icon={<HouseIcon />} label="Home" />
-              <NavItem to="/settings" icon={<GearIcon />} label="Settings" />
+              <NavItem to="/settings" icon={<GearSixIcon />} label="Settings" />
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

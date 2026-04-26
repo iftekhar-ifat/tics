@@ -6,12 +6,14 @@ import {
   ArrowCounterClockwiseIcon,
   CheckCircleIcon,
   CircleDashedIcon,
-  PlusCircleIcon
+  PlusCircleIcon,
+  FileImageIcon
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 
 type IndexingState = 'idle' | 'running' | 'paused' | 'complete'
 
@@ -33,7 +35,7 @@ const MOCK_NEW_IMAGES_COUNT = 17
 
 function StatRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between text-xs">
+    <div className="flex items-center justify-between text-sm">
       <span className="text-muted-foreground">{label}</span>
       <span className="font-mono tabular-nums text-sidebar-foreground">{value}</span>
     </div>
@@ -69,7 +71,7 @@ function StateBadge({ state, newImages }: { state: IndexingState; newImages: num
   return (
     <Badge
       variant="secondary"
-      className={`gap-1 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider ${className}`}
+      className={`gap-1 px-1.5 py-0.5 font-mono text-xs uppercase tracking-wider ${className}`}
     >
       {hasNew ? (
         <PlusCircleIcon size={12} weight="bold" />
@@ -88,7 +90,7 @@ function StateBadge({ state, newImages }: { state: IndexingState; newImages: num
   )
 }
 
-export function IndexingStatusPanel() {
+export function IndexingSettings() {
   const [status, setStatus] = useState<IndexingStatus>({
     indexed: 1340,
     total: MOCK_TOTAL,
@@ -169,64 +171,83 @@ export function IndexingStatusPanel() {
   const hasNew = isComplete && newImages > 0
 
   return (
-    <div className="flex flex-col gap-3 px-2 py-2 text-xs text-muted-foreground">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1.5">
-          <ImagesIcon size={16} className="shrink-0 text-sidebar-foreground" />
-          <span className="text-primary text-sm">Index Status</span>
-        </div>
-        <StateBadge state={state} newImages={newImages} />
-      </div>
+    <Card size="sm">
+      <CardHeader className="border-b">
+        <CardTitle className="flex gap-2 items-center text-base">
+          <FileImageIcon className="text-muted-foreground" size={24} /> Image Index
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-2 pt-1">
+        <div className="flex flex-col gap-3 px-2 py-2 text-xs text-muted-foreground">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <ImagesIcon size={20} className="shrink-0 text-sidebar-foreground" />
+              <span className="font-mono text-primary text-sm">Index Status</span>
+            </div>
+            <StateBadge state={state} newImages={newImages} />
+          </div>
 
-      <Progress value={pct} className="h-1.5" />
+          <Progress value={pct} className="h-1.5" />
 
-      <div className="flex flex-col gap-1">
-        <StatRow
-          label="Indexed"
-          value={`${indexed.toLocaleString()} / ${total.toLocaleString()}`}
-        />
-        <StatRow label="Remaining" value={remaining > 0 ? remaining.toLocaleString() : '—'} />
-        <StatRow label="Progress" value={`${pct}%`} />
-        {hasNew && <StatRow label="New images" value={`+${newImages.toLocaleString()}`} />}
-      </div>
+          <div className="flex flex-col gap-1">
+            <StatRow
+              label="Indexed"
+              value={`${indexed.toLocaleString()} / ${total.toLocaleString()}`}
+            />
+            <StatRow label="Remaining" value={remaining > 0 ? remaining.toLocaleString() : '—'} />
+            <StatRow label="Progress" value={`${pct}%`} />
+            {hasNew && <StatRow label="New images" value={`+${newImages.toLocaleString()}`} />}
+          </div>
 
-      <Separator />
+          <Separator />
 
-      {!isComplete && (
-        <Button
-          variant={isRunning ? 'destructive' : 'default'}
-          size="sm"
-          className="w-full h-7 text-xs"
-          onClick={isRunning ? handleStop : handleStart}
-        >
-          {isRunning ? (
-            <>
-              <StopIcon size={12} weight="fill" />
-              Stop
-            </>
-          ) : (
-            <>
-              <PlayIcon size={12} weight="fill" />
-              {state === 'paused' ? 'Resume' : 'Start'}
-            </>
-          )}
-        </Button>
-      )}
-
-      {isComplete && (
-        <div className="flex flex-col gap-1.5">
-          {hasNew && (
-            <Button variant="default" size="sm" className="w-full text-xs" onClick={handleIndexNew}>
-              <PlusCircleIcon size={12} />
-              Index New ({newImages})
+          {!isComplete && (
+            <Button
+              variant={isRunning ? 'destructive' : 'default'}
+              size="sm"
+              className="w-full h-7 text-xs"
+              onClick={isRunning ? handleStop : handleStart}
+            >
+              {isRunning ? (
+                <>
+                  <StopIcon size={12} weight="fill" />
+                  Stop
+                </>
+              ) : (
+                <>
+                  <PlayIcon size={12} weight="fill" />
+                  {state === 'paused' ? 'Resume' : 'Start'}
+                </>
+              )}
             </Button>
           )}
-          <Button variant="outline" size="sm" className="w-full text-xs" onClick={handleReindex}>
-            <ArrowCounterClockwiseIcon size={12} />
-            Re-index All
-          </Button>
+
+          {isComplete && (
+            <div className="flex flex-col gap-1.5">
+              {hasNew && (
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="w-full text-xs"
+                  onClick={handleIndexNew}
+                >
+                  <PlusCircleIcon size={12} />
+                  Index New ({newImages})
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full text-xs"
+                onClick={handleReindex}
+              >
+                <ArrowCounterClockwiseIcon size={12} />
+                Re-index All
+              </Button>
+            </div>
+          )}
         </div>
-      )}
-    </div>
+      </CardContent>
+    </Card>
   )
 }

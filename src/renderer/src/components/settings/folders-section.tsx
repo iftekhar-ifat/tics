@@ -1,232 +1,283 @@
 'use client'
 
-import { useState } from 'react'
-import { FolderIcon, PlusIcon } from '@phosphor-icons/react'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import {
+  FolderIcon,
+  ImageIcon,
+  PlayIcon,
+  StopIcon,
+  ArrowCounterClockwiseIcon,
+  CheckCircleIcon,
+  CircleDashedIcon,
+  PlusCircleIcon
+} from '@phosphor-icons/react'
 import { useAppStore } from '@/stores/app-store'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle
-} from '@/components/ui/dialog'
-import { ScrollArea } from '@/components/ui/scroll-area'
+import { Progress } from '@/components/ui/progress'
+import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 
-interface FolderRowProps {
-  path: string
-  imageCount: number
-  onReindex: () => void
-  onClearIndex: () => void
-  onRemove: () => void
+type IndexingState = 'idle' | 'running' | 'paused' | 'complete'
+
+interface IndexingStatus {
+  indexed: number
+  total: number
+  imgsPerSec: number
+  state: IndexingState
+  newImages: number
 }
 
-function FolderRow({
-  path,
-  imageCount,
-  onReindex,
-  onClearIndex,
-  onRemove
-}: FolderRowProps): React.JSX.Element {
-  const [showClearDialog, setShowClearDialog] = useState(false)
-  const [showRemoveDialog, setShowRemoveDialog] = useState(false)
+const MOCK_TOTAL = 4821
+const TICK_INTERVAL_MS = 80
+const IMGS_PER_TICK = 6
+const MOCK_NEW_IMAGES_DELAY_MS = 3000
+const MOCK_NEW_IMAGES_COUNT = 17
+
+function StatRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between text-[12px]">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="font-mono tabular-nums text-sidebar-foreground">{value}</span>
+    </div>
+  )
+}
+
+function StateBadge({ state, newImages }: { state: IndexingState; newImages: number }) {
+  const isRunning = state === 'running'
+  const isComplete = state === 'complete'
+  const isPaused = state === 'paused'
+  const hasNew = isComplete && newImages > 0
+
+  const className = hasNew
+    ? 'bg-violet-500/15 text-violet-500 hover:bg-violet-500/20 border-transparent'
+    : isComplete
+      ? 'bg-green-500/15 text-green-500 hover:bg-green-500/20 border-transparent'
+      : isRunning
+        ? 'bg-cyan-500/15 text-cyan-500 hover:bg-cyan-500/20 border-transparent'
+        : isPaused
+          ? 'bg-amber-500/15 text-amber-500 hover:bg-amber-500/20 border-transparent'
+          : 'border-transparent'
+
+  const label = hasNew
+    ? 'New'
+    : state === 'idle'
+      ? 'Idle'
+      : state === 'paused'
+        ? 'Paused'
+        : isComplete
+          ? 'Done'
+          : 'Running'
 
   return (
-    <>
-      <div className="flex items-center gap-3 py-3 px-1">
-        <FolderIcon className="size-5 shrink-0 text-muted-foreground" />
-        <span className="flex-1 truncate text-xs text-muted-foreground">{path}</span>
-        <span className="shrink-0 text-xs text-muted-foreground">{imageCount} images</span>
-        <div className="flex items-center gap-1">
-          <Button
-            variant="outline"
-            size="xs"
-            onClick={onReindex}
-            className="h-7 rounded-none border border-border bg-background px-2 text-xs"
-          >
-            Re-index
-          </Button>
-          <Button
-            variant="outline"
-            size="xs"
-            onClick={() => setShowClearDialog(true)}
-            className="h-7 rounded-none border border-border bg-background px-2 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
-          >
-            Clear Index
-          </Button>
-          <Button
-            variant="outline"
-            size="xs"
-            onClick={() => setShowRemoveDialog(true)}
-            className="h-7 rounded-none border border-border bg-background px-2 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
-          >
-            Remove
-          </Button>
-        </div>
-      </div>
-      <Separator className="my-1" />
-
-      {/* Clear Index Confirmation Dialog */}
-      <Dialog open={showClearDialog} onOpenChange={setShowClearDialog}>
-        <DialogContent className="rounded-none border bg-card p-0">
-          <DialogHeader className="px-4 pt-4">
-            <DialogTitle className="text-sm">Clear Index</DialogTitle>
-            <DialogDescription className="text-xs">
-              Are you sure you want to clear the index for this folder? This action cannot be
-              undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="gap-1 px-4 pb-4 pt-0">
-            <Button
-              variant="outline"
-              size="xs"
-              onClick={() => setShowClearDialog(false)}
-              className="h-7 rounded-none border px-3 text-xs"
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              size="xs"
-              onClick={() => {
-                onClearIndex()
-                setShowClearDialog(false)
-              }}
-              className="h-7 rounded-none px-3 text-xs"
-            >
-              Clear
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Remove Folder Confirmation Dialog */}
-      <Dialog open={showRemoveDialog} onOpenChange={setShowRemoveDialog}>
-        <DialogContent className="rounded-none border bg-card p-0">
-          <DialogHeader className="px-4 pt-4">
-            <DialogTitle className="text-sm">Remove Folder</DialogTitle>
-            <DialogDescription className="text-xs">
-              Are you sure you want to remove this folder? Its index will also be cleared. This
-              action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="gap-1 px-4 pb-4 pt-0">
-            <Button
-              variant="outline"
-              size="xs"
-              onClick={() => setShowRemoveDialog(false)}
-              className="h-7 rounded-none border px-3 text-xs"
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              size="xs"
-              onClick={() => {
-                onRemove()
-                setShowRemoveDialog(false)
-              }}
-              className="h-7 rounded-none px-3 text-xs"
-            >
-              Remove
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
+    <Badge
+      variant="secondary"
+      className={`gap-1 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider ${className}`}
+    >
+      {hasNew ? (
+        <PlusCircleIcon size={12} weight="bold" />
+      ) : isComplete ? (
+        <CheckCircleIcon size={12} weight="fill" />
+      ) : isRunning ? (
+        <span className="relative flex h-1.5 w-1.5">
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan-500 opacity-75" />
+          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-cyan-500" />
+        </span>
+      ) : (
+        <CircleDashedIcon size={12} />
+      )}
+      {label}
+    </Badge>
   )
 }
 
 export function FoldersSection(): React.JSX.Element {
   const { rootFolder, setRootFolder } = useAppStore()
-  const [folders, setFolders] = useState<Array<{ path: string; imageCount: number }>>([])
+  const [status, setStatus] = useState<IndexingStatus>({
+    indexed: 0,
+    total: MOCK_TOTAL,
+    imgsPerSec: 0,
+    state: 'idle',
+    newImages: 0
+  })
 
-  const handleAddFolder = async () => {
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const newImagesTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const clearTick = useCallback(() => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current)
+      intervalRef.current = null
+    }
+  }, [])
+
+  const startTick = useCallback(() => {
+    clearTick()
+    intervalRef.current = setInterval(() => {
+      setStatus((prev) => {
+        if (prev.state !== 'running') return prev
+        const next = Math.min(prev.indexed + IMGS_PER_TICK, prev.total)
+        const done = next >= prev.total
+        return {
+          ...prev,
+          indexed: next,
+          imgsPerSec: done ? 0 : Math.round((1000 / TICK_INTERVAL_MS) * IMGS_PER_TICK),
+          state: done ? 'complete' : 'running'
+        }
+      })
+    }, TICK_INTERVAL_MS)
+  }, [clearTick])
+
+  useEffect(() => {
+    if (status.state === 'complete' && status.newImages === 0) {
+      newImagesTimerRef.current = setTimeout(() => {
+        setStatus((p) => ({ ...p, newImages: MOCK_NEW_IMAGES_COUNT }))
+      }, MOCK_NEW_IMAGES_DELAY_MS)
+    }
+    return () => {
+      if (newImagesTimerRef.current) clearTimeout(newImagesTimerRef.current)
+    }
+  }, [status.state, status.newImages])
+
+  useEffect(() => {
+    if (status.state === 'running') startTick()
+    else clearTick()
+    return clearTick
+  }, [status.state, startTick, clearTick])
+
+  const handleStart = () => setStatus((p) => ({ ...p, state: 'running' }))
+  const handleStop = () => setStatus((p) => ({ ...p, state: 'paused', imgsPerSec: 0 }))
+
+  const handleReindex = () => {
+    clearTick()
+    setStatus({ indexed: 0, total: MOCK_TOTAL, imgsPerSec: 0, state: 'idle', newImages: 0 })
+  }
+
+  const handleIndexNew = () => {
+    setStatus((p) => ({
+      ...p,
+      total: p.indexed + p.newImages,
+      newImages: 0,
+      state: 'running'
+    }))
+  }
+
+  const handleChangeFolder = async () => {
     const result = await window.api.dialog.openDirectory()
     if (result && !result.canceled && result.filePaths.length > 0) {
       const path = result.filePaths[0]
-      // Check if folder already exists
-      if (folders.some((f) => f.path === path) || rootFolder?.path === path) {
-        return
-      }
+      const name = path.split(/[\\/]/).pop() || path
       const scanResult = await window.api.folder.scanFolder(path)
-      const newFolder = { path, imageCount: scanResult.imageCount }
-      setFolders((prev) => [...prev, newFolder])
-    }
-  }
-
-  const handleReindex = async (path: string) => {
-    const scanResult = await window.api.folder.scanFolder(path)
-    if (path === rootFolder?.path) {
       setRootFolder({
-        ...rootFolder,
+        path,
+        name,
         imageCount: scanResult.imageCount,
         totalSize: scanResult.totalSize
       })
-    } else {
-      setFolders((prev) =>
-        prev.map((f) => (f.path === path ? { ...f, imageCount: scanResult.imageCount } : f))
-      )
     }
   }
 
-  const handleClearIndex = (path: string) => {
-    // In a real implementation, this would call an IPC to clear the FAISS index
-    // For now, we just update the folder list
-    console.log(`Clear index for: ${path}`)
-  }
-
-  const handleRemoveFolder = (path: string) => {
-    if (path === rootFolder?.path) {
-      setRootFolder(null)
-    } else {
-      setFolders((prev) => prev.filter((f) => f.path !== path))
-    }
-  }
-
-  const allFolders = [
-    ...(rootFolder ? [{ path: rootFolder.path, imageCount: rootFolder.imageCount }] : []),
-    ...folders
-  ]
+  const { indexed, total, state, newImages } = status
+  const remaining = total - indexed
+  const pct = total > 0 ? Math.round((indexed / total) * 100) : 0
+  const isRunning = state === 'running'
+  const isComplete = state === 'complete'
+  const hasNew = isComplete && newImages > 0
 
   return (
     <Card className="rounded-none border-b-0 border-x-0 bg-card shadow-none">
       <CardHeader className="flex flex-row items-center justify-between gap-4 px-4 py-3">
-        <CardTitle className="text-sm">Folders</CardTitle>
+        <CardTitle className="text-sm">Library Folder</CardTitle>
         <Button
           variant="outline"
           size="xs"
-          onClick={handleAddFolder}
+          onClick={handleChangeFolder}
           className="h-7 gap-1 rounded-none border px-2 text-xs"
         >
-          <PlusIcon className="size-3" />
-          Add Folder
+          <FolderIcon className="size-3" />
+          {rootFolder ? 'Change Folder' : 'Choose Folder'}
         </Button>
       </CardHeader>
-      <CardContent className="p-0">
-        <ScrollArea className="h-[200px]">
-          <div className="px-1">
-            {allFolders.length === 0 ? (
-              <div className="flex h-[200px] items-center justify-center">
-                <span className="text-xs text-muted-foreground">No folders added</span>
+      <CardContent className="px-4 pb-4">
+        <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
+          <FolderIcon className="size-4 shrink-0" />
+          <span className="truncate">
+            {rootFolder?.path || (
+              <span className="text-muted-foreground/60">No folder selected</span>
+            )}
+          </span>
+        </div>
+        {rootFolder && (
+          <div className="mt-3 flex flex-col gap-3 rounded-none border border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <ImageIcon size={16} className="shrink-0 text-sidebar-foreground" />
+                <span className="text-primary text-sm">Index Status</span>
               </div>
-            ) : (
-              allFolders.map((folder) => (
-                <FolderRow
-                  key={folder.path}
-                  path={folder.path}
-                  imageCount={folder.imageCount}
-                  onReindex={() => handleReindex(folder.path)}
-                  onClearIndex={() => handleClearIndex(folder.path)}
-                  onRemove={() => handleRemoveFolder(folder.path)}
-                />
-              ))
+              <StateBadge state={state} newImages={newImages} />
+            </div>
+
+            <Progress value={pct} className="h-1.5" />
+
+            <div className="flex flex-col gap-1">
+              <StatRow
+                label="Indexed"
+                value={`${indexed.toLocaleString()} / ${total.toLocaleString()}`}
+              />
+              <StatRow label="Remaining" value={remaining > 0 ? remaining.toLocaleString() : '—'} />
+              <StatRow label="Progress" value={`${pct}%`} />
+              {hasNew && <StatRow label="New images" value={`+${newImages.toLocaleString()}`} />}
+            </div>
+
+            <Separator />
+
+            {!isComplete && (
+              <Button
+                variant={isRunning ? 'destructive' : 'default'}
+                size="sm"
+                className="w-full h-7 text-xs"
+                onClick={isRunning ? handleStop : handleStart}
+              >
+                {isRunning ? (
+                  <>
+                    <StopIcon size={12} weight="fill" />
+                    Stop
+                  </>
+                ) : (
+                  <>
+                    <PlayIcon size={12} weight="fill" />
+                    {state === 'paused' ? 'Resume' : 'Start'}
+                  </>
+                )}
+              </Button>
+            )}
+
+            {isComplete && (
+              <div className="flex flex-col gap-1.5">
+                {hasNew && (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    className="w-full text-xs"
+                    onClick={handleIndexNew}
+                  >
+                    <PlusCircleIcon size={12} />
+                    Index New ({newImages})
+                  </Button>
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full text-xs"
+                  onClick={handleReindex}
+                >
+                  <ArrowCounterClockwiseIcon size={12} />
+                  Re-index All
+                </Button>
+              </div>
             )}
           </div>
-        </ScrollArea>
+        )}
       </CardContent>
     </Card>
   )
