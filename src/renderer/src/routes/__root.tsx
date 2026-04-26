@@ -32,9 +32,7 @@ function RootLayout(): React.JSX.Element {
             <ResizableHandle withHandle />
             <ResizablePanel>
               <SidebarInset>
-                <div className="mx-auto px-4 py-6">
-                  <Outlet />
-                </div>
+                <Outlet />
               </SidebarInset>
             </ResizablePanel>
           </ResizablePanelGroup>
