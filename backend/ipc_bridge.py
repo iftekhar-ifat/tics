@@ -7,19 +7,14 @@ import platform
 import subprocess
 import threading
 
-try:
-    import torch
-    import psutil
-except ImportError:
-    torch = None
-    psutil = None
-
 from model_manager import (
     is_model_ready,
     download_model,
     cancel_download,
     _delete_model_files,
 )
+from hardware_info import get_system_info
+from file_system import scan_folder
 
 
 def push_event(event_type: str, data: dict = None):
@@ -49,102 +44,6 @@ SENTINEL_FILE = MODEL_DIR / "download_complete"
 
 def is_model_ready() -> bool:
     return SENTINEL_FILE.exists()
-
-
-async def scan_folder(dir_path: str):
-    """Scan a folder for images."""
-    IMAGE_EXTENSIONS = {
-        ".jpg",
-        ".jpeg",
-        ".png",
-        ".gif",
-        ".bmp",
-        ".webp",
-        ".tiff",
-        ".tif",
-        ".svg",
-        ".ico",
-        ".heic",
-        ".heif",
-        ".avif",
-    }
-
-    image_count = 0
-    total_size = 0
-
-    try:
-        for root, dirs, files in os.walk(dir_path):
-            for file in files:
-                ext = os.path.splitext(file)[1].lower()
-                if ext in IMAGE_EXTENSIONS:
-                    image_count += 1
-                    try:
-                        total_size += os.path.getsize(os.path.join(root, file))
-                    except Exception as e:
-                        print(
-                            f"[scan_folder] Could not get size of {file}: {e}",
-                            file=sys.stderr,
-                        )
-    except Exception as e:
-        print(f"[scan_folder] {e}", file=sys.stderr)
-
-    return {"imageCount": image_count, "totalSize": total_size}
-
-
-def _get_system_info_internal():
-    """Get system OS info (blocking, runs in executor)."""
-    if torch is None:
-        return {
-            "os": platform.system(),
-            "device": "cpu",
-            "deviceName": "CPU",
-            "memory": "Unknown",
-        }
-
-    device = "cpu"
-    device_name = "CPU"
-
-    if torch.cuda.is_available():
-        device = "cuda"
-        device_name = f"CUDA: {torch.cuda.get_device_name(0)}"
-    elif platform.system() == "Darwin":
-        try:
-            if torch.backends.mps.is_available():
-                device = "mps"
-                device_name = "Apple MPS"
-        except Exception:
-            pass
-
-    memory = "Unknown"
-    try:
-        if device == "cuda":
-            mem = torch.cuda.get_device_properties(0)
-            memory = f"{round(mem.total_memory / (1024**3), 1)} GB"
-        elif psutil is not None:
-            vm = psutil.virtual_memory()
-            memory = f"{round(vm.total / (1024**3), 1)} GB"
-    except Exception:
-        pass
-
-    return {
-        "os": platform.system(),
-        "device": device,
-        "deviceName": device_name,
-        "memory": memory,
-    }
-
-
-_system_info_cache = None
-
-
-async def get_system_info():
-    """Get system OS info (cached after first call)."""
-    global _system_info_cache
-    if _system_info_cache is not None:
-        return _system_info_cache
-    loop = asyncio.get_event_loop()
-    _system_info_cache = await loop.run_in_executor(None, _get_system_info_internal)
-    return _system_info_cache
 
 
 # Track active download thread
