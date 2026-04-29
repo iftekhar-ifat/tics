@@ -105,11 +105,26 @@ function FileTreeNode({
     }
   }
 
+  const handleClick = async (e: React.MouseEvent) => {
+    // If it's a file (image), open it with the default app
+    if (node.type === 'file') {
+      e.stopPropagation()
+      try {
+        await window.api.file.openItem(node.path)
+      } catch (err) {
+        console.error('Failed to open file:', err)
+      }
+      return
+    }
+    // If it's a folder, handle expand/collapse
+    handleExpand()
+  }
+
   const hasChildren = node.hasChildren || (node.children && node.children.length > 0)
 
   return (
     <TreeNode nodeId={node.id} level={level} isLast={isLast}>
-      <TreeNodeTrigger onClick={handleExpand}>
+      <TreeNodeTrigger onClick={handleClick}>
         {isLoading ? (
           <div className="mr-1 flex h-4 w-4 items-center justify-center">
             <SpinnerIcon className="h-3 w-3 animate-spin text-muted-foreground" />
