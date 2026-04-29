@@ -14,7 +14,7 @@ from model_manager import (
     _delete_model_files,
 )
 from hardware_info import get_system_info
-from file_system import scan_folder
+# from file_system import scan_folder  # REMOVED - now handled in frontend
 
 
 def push_event(event_type: str, data: dict = None):
@@ -137,7 +137,6 @@ async def handle_request(request):
         return {"path": str(new_model_dir), "size": size}
 
     handlers = {
-        "folder.scan": lambda p: scan_folder(p.get("path", "")),
         "system.getOSInfo": lambda p: get_system_info(),
         "model.getStatus": handle_model_get_status,
         "model.download": handle_model_download,

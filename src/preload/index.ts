@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
+import { scanFolder } from './utils/fileScanner'
 
 type UpdateState = {
   status:
@@ -27,21 +28,17 @@ const api = {
     openDirectory: () =>
       ipcRenderer.invoke('dialog:open-directory') as Promise<Electron.OpenDialogReturnValue>
   },
-  folder: {
-    scanFolder: (dirPath: string) =>
-      ipcRenderer.invoke('folder:scan', dirPath) as Promise<{
-        imageCount: number
-        totalSize: number
-      }>,
-    listSubdirectories: (dirPath: string) =>
-      ipcRenderer.invoke('folder:list-subdirs', dirPath) as Promise<
-        { name: string; path: string }[]
-      >,
-    getAllImages: (dirPath: string) =>
-      ipcRenderer.invoke('folder:get-all-images', dirPath) as Promise<
-        { name: string; path: string; relativePath: string }[]
-      >
-  },
+   folder: {
+     scanFolder: (dirPath: string) => scanFolder(dirPath),
+     listSubdirectories: (dirPath: string) =>
+       ipcRenderer.invoke('folder:list-subdirs', dirPath) as Promise<
+         { name: string; path: string }[]
+       >,
+     getAllImages: (dirPath: string) =>
+       ipcRenderer.invoke('folder:get-all-images', dirPath) as Promise<
+         { name: string; path: string; relativePath: string }[]
+       >,
+   },
   system: {
     getOSInfo: () =>
       ipcRenderer.invoke('system:get-os-info') as Promise<{
