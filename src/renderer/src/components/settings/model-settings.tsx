@@ -98,9 +98,7 @@ export function ModelSettings(): React.JSX.Element {
     if (!result.ok) {
       throw new Error(result.message || 'Failed to move folder')
     }
-    if (result.data) {
-      useAppStore.getState().setModelFolder({ path: result.data.path, size: result.data.size })
-    }
+    return result.data
   }
 
   return (

@@ -123,9 +123,18 @@ async def handle_request(request):
                     target.mkdir(parents=True, exist_ok=True)
             # Remove old model directory
             shutil.rmtree(old_model_dir)
+        # Calculate size of moved folder
+        size = 0
+        if new_model_dir.exists() and new_model_dir.is_dir():
+            for entry in new_model_dir.rglob("*"):
+                if entry.is_file():
+                    try:
+                        size += entry.stat().st_size
+                    except OSError:
+                        pass
         # Update MODEL_DIR env so future runs use new location
         os.environ["TICS_DATA_DIR"] = str(new_dir)
-        return {"path": str(new_model_dir), "size": 0}
+        return {"path": str(new_model_dir), "size": size}
 
     handlers = {
         "folder.scan": lambda p: scan_folder(p.get("path", "")),

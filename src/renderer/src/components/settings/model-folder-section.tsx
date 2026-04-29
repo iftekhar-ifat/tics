@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { FolderIcon, LinkSimpleIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/dialog'
 
 interface ModelFolderSectionProps {
-  onMoveFolder: (newDir: string) => Promise<void>
+  onMoveFolder: (newDir: string) => Promise<{ path: string; size: number } | undefined>
 }
 
 export function ModelFolderSection({ onMoveFolder }: ModelFolderSectionProps): React.JSX.Element {
@@ -38,7 +38,22 @@ export function ModelFolderSection({ onMoveFolder }: ModelFolderSectionProps): R
     setMoveLoading(true)
     setMoveError('')
     try {
-      await onMoveFolder(targetDir)
+      const folderData = await onMoveFolder(targetDir)
+      // Update store with result and re-fetch to confirm
+      if (folderData) {
+        useAppStore.getState().setModelFolder({
+          path: folderData.path,
+          size: folderData.size
+        })
+      }
+      // Also do a fresh getFolderInfo to ensure correctness
+      const result = await window.api.model.getFolderInfo()
+      if (result.ok && result.data) {
+        useAppStore.getState().setModelFolder({
+          path: result.data.path,
+          size: result.data.size
+        })
+      }
       setMoveFolderOpen(false)
       setTargetDir('')
     } catch (err) {
@@ -55,17 +70,6 @@ export function ModelFolderSection({ onMoveFolder }: ModelFolderSectionProps): R
     const value = bytes / Math.pow(1024, i)
     return `${value.toFixed(2)} ${units[i]}`
   }
-
-  useEffect(() => {
-    const loadFolderInfo = async () => {
-      try {
-        await window.api.model.getFolderInfo()
-      } catch {
-        // ignore errors
-      }
-    }
-    loadFolderInfo()
-  }, [])
 
   return (
     <>
