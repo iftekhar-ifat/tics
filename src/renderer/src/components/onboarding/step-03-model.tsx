@@ -14,6 +14,20 @@ export function Step03Model(): React.JSX.Element {
   const [downloadSpeed, setDownloadSpeed] = useState<number>(0)
 
   useEffect(() => {
+    const loadModelFolderInfo = async () => {
+      try {
+        const folderResult = await window.api.model.getFolderInfo()
+        if (folderResult.ok && folderResult.data) {
+          useAppStore.getState().setModelFolder({
+            path: folderResult.data.path,
+            size: folderResult.data.size
+          })
+        }
+      } catch {
+        // ignore folder info errors
+      }
+    }
+
     const checkStatus = async () => {
       try {
         const result = await window.api.model.getStatus()
@@ -21,15 +35,20 @@ export function Step03Model(): React.JSX.Element {
           setModelStatus('complete')
           setDownloadProgress(100)
           if (result.data.device) setDevice(result.data.device)
-          return
+        } else if (result.data?.device) {
+          setDevice(result.data.device)
         }
-        if (result.data?.device) setDevice(result.data.device)
       } catch {
         // backend not ready
       }
     }
 
-    void checkStatus()
+    const init = async () => {
+      await checkStatus()
+      await loadModelFolderInfo()
+    }
+
+    void init()
   }, [setDownloadProgress, setModelStatus])
 
   useEffect(() => {
@@ -49,6 +68,18 @@ export function Step03Model(): React.JSX.Element {
         setModelStatus('complete')
         setDownloadProgress(100)
         setDownloadSpeed(0)
+        try {
+          window.api.model.getFolderInfo().then((folderResult) => {
+            if (folderResult.ok && folderResult.data) {
+              useAppStore.getState().setModelFolder({
+                path: folderResult.data.path,
+                size: folderResult.data.size
+              })
+            }
+          })
+        } catch {
+          // ignore folder info errors
+        }
       }
       if (msg.type === 'model_download_cancelled') {
         setModelStatus('default')

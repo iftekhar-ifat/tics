@@ -448,6 +448,24 @@ app.whenReady().then(() => {
     }
   })
 
+  ipcMain.handle('model:get-folder-info', async () => {
+    try {
+      const result = await callBackend('model.getFolderInfo')
+      return { ok: true, data: result }
+    } catch (error) {
+      return { ok: false, message: String(error) }
+    }
+  })
+
+  ipcMain.handle('model:move-folder', async (_event, newDir: string) => {
+    try {
+      const result = await callBackend('model.moveFolder', { newDir })
+      return { ok: true, data: result }
+    } catch (error) {
+      return { ok: false, message: String(error) }
+    }
+  })
+
   createWindow()
   startBackend()
 

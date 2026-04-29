@@ -9,11 +9,17 @@ interface RootFolder {
   totalSize: number
 }
 
+interface ModelFolder {
+  path: string
+  size: number
+}
+
 interface AppState {
   // Onboarding workflow state
   onboardingComplete: boolean
   currentStep: number
   rootFolder: RootFolder | null
+  modelFolder: ModelFolder | null
   hardwareInfo: HardwareInfo | null
   hardwareCheckComplete: boolean
   selectedModel: string
@@ -31,6 +37,7 @@ interface AppState {
   nextStep: () => void
   prevStep: () => void
   setRootFolder: (info: RootFolder | null) => void
+  setModelFolder: (info: ModelFolder | null) => void
   setHardwareInfo: (info: HardwareInfo | null) => void
   setHardwareCheckComplete: (complete: boolean) => void
   setModelStatus: (status: ModelStatus) => void
@@ -49,6 +56,7 @@ export const useAppStore = create<AppState>()(
       onboardingComplete: false,
       currentStep: 1,
       rootFolder: null,
+      modelFolder: null,
       hardwareInfo: null,
       hardwareCheckComplete: false,
       selectedModel: 'clip-vit-b-32',
@@ -66,6 +74,7 @@ export const useAppStore = create<AppState>()(
       nextStep: () => set((state) => ({ currentStep: Math.min(state.currentStep + 1, 4) })),
       prevStep: () => set((state) => ({ currentStep: Math.max(state.currentStep - 1, 1) })),
       setRootFolder: (info) => set({ rootFolder: info }),
+      setModelFolder: (info) => set({ modelFolder: info }),
       setHardwareInfo: (info) => set({ hardwareInfo: info }),
       setHardwareCheckComplete: (complete) => set({ hardwareCheckComplete: complete }),
       setModelStatus: (status) => set({ modelStatus: status }),
@@ -79,6 +88,7 @@ export const useAppStore = create<AppState>()(
           onboardingComplete: false,
           currentStep: 1,
           rootFolder: null,
+          modelFolder: null,
           hardwareInfo: null,
           hardwareCheckComplete: false,
           selectedModel: 'clip-vit-b-32',
@@ -94,6 +104,7 @@ export const useAppStore = create<AppState>()(
         onboardingComplete: state.onboardingComplete,
         currentStep: state.currentStep,
         rootFolder: state.rootFolder,
+        modelFolder: state.modelFolder,
         hardwareInfo: state.hardwareInfo,
         hardwareCheckComplete: state.hardwareCheckComplete,
         selectedModel: state.selectedModel,

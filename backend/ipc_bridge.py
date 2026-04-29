@@ -90,12 +90,51 @@ async def handle_request(request):
         _download_thread = None
         return {"status": "cancelled"}
 
+    async def handle_model_folder_info(_p):
+        model_dir = MODEL_DIR
+        size = 0
+        if model_dir.exists() and model_dir.is_dir():
+            for entry in model_dir.rglob("*"):
+                if entry.is_file():
+                    try:
+                        size += entry.stat().st_size
+                    except OSError:
+                        pass
+        return {"path": str(model_dir), "size": size}
+
+    async def handle_model_folder_move(_p):
+        new_dir = Path(_p.get("newDir", ""))
+        if not new_dir or not new_dir.is_dir():
+            raise ValueError("Invalid target directory")
+        new_model_dir = new_dir / "models" / "clip-vit-b32"
+        old_model_dir = MODEL_DIR
+        old_model_dir_str = str(old_model_dir)
+        # Copy files recursively
+        import shutil
+        if old_model_dir.exists():
+            new_model_dir.mkdir(parents=True, exist_ok=True)
+            for item in old_model_dir.rglob("*"):
+                rel = item.relative_to(old_model_dir)
+                target = new_model_dir / rel
+                if item.is_file():
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(item, target)
+                elif item.is_dir():
+                    target.mkdir(parents=True, exist_ok=True)
+            # Remove old model directory
+            shutil.rmtree(old_model_dir)
+        # Update MODEL_DIR env so future runs use new location
+        os.environ["TICS_DATA_DIR"] = str(new_dir)
+        return {"path": str(new_model_dir), "size": 0}
+
     handlers = {
         "folder.scan": lambda p: scan_folder(p.get("path", "")),
         "system.getOSInfo": lambda p: get_system_info(),
         "model.getStatus": handle_model_get_status,
         "model.download": handle_model_download,
         "model.cancelDownload": handle_model_cancel,
+        "model.getFolderInfo": handle_model_folder_info,
+        "model.moveFolder": handle_model_folder_move,
     }
 
     try:

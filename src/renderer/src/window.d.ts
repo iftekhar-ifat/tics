@@ -68,6 +68,16 @@ interface Window {
         data?: { status: string }
         message?: string
       }>
+      getFolderInfo: () => Promise<{
+        ok: boolean
+        data?: { path: string; size: number }
+        message?: string
+      }>
+      moveFolder: (newDir: string) => Promise<{
+        ok: boolean
+        data?: { path: string; size: number }
+        message?: string
+      }>
     }
     file: {
       openItem: (path: string) => Promise<void>

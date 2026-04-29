@@ -104,6 +104,18 @@ const api = {
         ok: boolean
         data?: { status: string }
         message?: string
+      }>,
+    getFolderInfo: () =>
+      ipcRenderer.invoke('model:get-folder-info') as Promise<{
+        ok: boolean
+        data?: { path: string; size: number }
+        message?: string
+      }>,
+    moveFolder: (newDir: string) =>
+      ipcRenderer.invoke('model:move-folder', newDir) as Promise<{
+        ok: boolean
+        data?: { path: string; size: number }
+        message?: string
       }>
   },
   file: {
