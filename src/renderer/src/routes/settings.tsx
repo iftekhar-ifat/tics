@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { GearSixIcon } from '@phosphor-icons/react'
 import FolderSettings from '@/components/settings/folder-settings'
 import { IndexingSettings } from '@/components/settings/indexing-settings'
-import { ModelSettings } from '@/components/settings/model-settings'
+import { ModelSettings } from '@/components/settings/model-settings/model-settings'
 
 export const Route = createFileRoute('/settings')({
   component: SettingsPage

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { CpuIcon, DownloadSimpleIcon, SparkleIcon } from '@phosphor-icons/react'
+import { DownloadSimpleIcon, FolderOpenIcon, SparkleIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -12,17 +12,16 @@ import {
 import { useAppStore } from '@/stores'
 import { useBackendEvents } from '@/hooks/use-backend-events'
 import { ModelFolderSection } from './model-folder-section'
+import { ModelDeleteSection } from './model-delete-section'
+import { Progress } from '@/components/ui/progress'
 
 export function ModelSettings(): React.JSX.Element {
-  const { hardwareInfo } = useAppStore()
   const modelStatus = useAppStore((s) => s.modelStatus)
   const downloadProgress = useAppStore((s) => s.downloadProgress)
   const setModelStatus = useAppStore((s) => s.setModelStatus)
   const setDownloadProgress = useAppStore((s) => s.setDownloadProgress)
 
   const { onMessage } = useBackendEvents()
-  const [faissSize] = useState(0)
-  const [vectorCount] = useState(0)
   const [downloadSpeed, setDownloadSpeed] = useState(0)
 
   useEffect(() => {
@@ -110,38 +109,61 @@ export function ModelSettings(): React.JSX.Element {
     }
   }
 
-  return (
-    <>
-      <Card size="sm">
-        <CardHeader className="border-b">
-          <CardTitle className="flex gap-2 items-center text-base">
-            <SparkleIcon className="text-muted-foreground" size={24} /> Model
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-3 pt-1">
-          {/* Model Selector */}
-          <div className="flex items-center justify-between gap-2">
-            <Select defaultValue="clip-vit-b-32">
-              <SelectTrigger className="w-48 h-8 text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="clip-vit-b-32" className="text-xs">
-                  CLIP ViT-B/32
-                </SelectItem>
-                <SelectItem value="clip-vit-l-14" className="text-xs" disabled>
-                  CLIP ViT-L/14 — coming soon
-                </SelectItem>
-                <SelectItem value="siglip" className="text-xs" disabled>
-                  SigLIP — coming soon
-                </SelectItem>
-              </SelectContent>
-            </Select>
+  const handleSelectFolder = async () => {
+    /* try {
+    const result = await window.api.model.selectFolder()
+    if (result?.path) {
+      useAppStore.getState().setModelFolder({ path: result.path, size: result.size })
+      setModelStatus('complete')
+      setDownloadProgress(100)
+    }
+  } catch {
+    setModelStatus('failed')
+  } */
+  }
 
+  return (
+    <Card size="sm">
+      <CardHeader className="border-b">
+        <CardTitle className="flex gap-2 items-center text-base">
+          <SparkleIcon className="text-muted-foreground" size={24} /> Model
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-3 pt-1">
+        {/* Model Selector */}
+        <div className="flex items-center justify-between gap-2">
+          <Select defaultValue="clip-vit-b-32">
+            <SelectTrigger className="w-48 h-8 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="clip-vit-b-32" className="text-xs">
+                CLIP ViT-B/32
+              </SelectItem>
+              <SelectItem value="clip-vit-l-14" className="text-xs" disabled>
+                CLIP ViT-L/14 — coming soon
+              </SelectItem>
+              <SelectItem value="siglip" className="text-xs" disabled>
+                SigLIP — coming soon
+              </SelectItem>
+            </SelectContent>
+          </Select>
+
+          <div className="flex items-center gap-2">
             {modelStatus === 'default' && (
-              <Button size="sm" variant="outline" className="shrink-0" onClick={handleDownload}>
-                <DownloadSimpleIcon className="mr-1 size-3" /> Download
-              </Button>
+              <>
+                <Button size="sm" variant="outline" className="shrink-0" onClick={handleDownload}>
+                  <DownloadSimpleIcon className="mr-1 size-3" /> Download
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="shrink-0"
+                  onClick={handleSelectFolder}
+                >
+                  <FolderOpenIcon className="mr-1 size-3" /> Select
+                </Button>
+              </>
             )}
             {modelStatus === 'downloading' && (
               <Button size="sm" variant="outline" className="shrink-0" onClick={handleCancel}>
@@ -149,9 +171,12 @@ export function ModelSettings(): React.JSX.Element {
               </Button>
             )}
             {modelStatus === 'complete' && (
-              <Button size="sm" variant="outline" className="shrink-0" disabled>
-                Downloaded
-              </Button>
+              <>
+                <Button size="sm" variant="outline" className="shrink-0" disabled>
+                  Downloaded
+                </Button>
+                <ModelDeleteSection onDelete={handleDeleteModel} />
+              </>
             )}
             {modelStatus === 'failed' && (
               <Button size="sm" variant="outline" className="shrink-0" onClick={handleDownload}>
@@ -159,39 +184,25 @@ export function ModelSettings(): React.JSX.Element {
               </Button>
             )}
           </div>
+        </div>
 
-          {/* Download Progress */}
-          {modelStatus === 'downloading' && (
-            <div>
-              <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                <div
-                  className="h-full bg-primary transition-all"
-                  style={{ width: `${downloadProgress}%` }}
-                />
-              </div>
-              <p className="mt-1 font-mono text-xs text-muted-foreground">
-                {Math.round(downloadProgress)}%{downloadSpeed > 0 && ` · ${downloadSpeed} MB/s`}
-              </p>
-            </div>
-          )}
-
-          {modelStatus === 'failed' && (
-            <p className="text-xs text-destructive">Download failed. Please retry.</p>
-          )}
-
-          {/* Stats & Device */}
-          <div className="flex gap-4 text-sm text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <CpuIcon size={14} />
-              {hardwareInfo?.inferenceDevice?.toUpperCase() || 'CPU'}
-            </span>
-            <span>{faissSize.toFixed(2)} MB</span>
-            <span>{vectorCount.toLocaleString()} vectors</span>
+        {/* Download Progress */}
+        {modelStatus === 'downloading' && (
+          <div>
+            <p className="mb-1 font-mono text-xs text-muted-foreground">Downloading...</p>
+            <Progress value={downloadProgress} className="h-1.5" />
+            <p className="mt-1 font-mono text-xs text-muted-foreground">
+              {Math.round(downloadProgress)}%{downloadSpeed > 0 && ` · ${downloadSpeed} MB/s`}
+            </p>
           </div>
-        </CardContent>
-      </Card>
+        )}
 
-      <ModelFolderSection onMoveFolder={handleMoveFolder} onDelete={handleDeleteModel} />
-    </>
+        {modelStatus === 'failed' && (
+          <p className="text-xs text-destructive">Download failed. Please retry.</p>
+        )}
+
+        <ModelFolderSection onMoveFolder={handleMoveFolder} />
+      </CardContent>
+    </Card>
   )
 }

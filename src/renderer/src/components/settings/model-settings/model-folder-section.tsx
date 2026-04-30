@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { FolderIcon, LinkSimpleIcon, TrashIcon } from '@phosphor-icons/react'
+import { FolderIcon, LinkSimpleIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -15,19 +15,15 @@ import {
 
 interface ModelFolderSectionProps {
   onMoveFolder: (newDir: string) => Promise<{ path: string; size: number }>
-  onDelete: () => Promise<void>
 }
 
-export function ModelFolderSection({ onMoveFolder, onDelete }: ModelFolderSectionProps): React.JSX.Element {
+export function ModelFolderSection({ onMoveFolder }: ModelFolderSectionProps): React.JSX.Element {
   const modelFolder = useAppStore((s) => s.modelFolder)
   const [folderInfoOpen, setFolderInfoOpen] = useState(false)
   const [moveFolderOpen, setMoveFolderOpen] = useState(false)
   const [targetDir, setTargetDir] = useState('')
   const [moveLoading, setMoveLoading] = useState(false)
   const [moveError, setMoveError] = useState('')
-  const [deleteOpen, setDeleteOpen] = useState(false)
-  const [deleteLoading, setDeleteLoading] = useState(false)
-  const [deleteError, setDeleteError] = useState('')
 
   const handleSelectTargetDir = async () => {
     const result = await window.api.dialog.openDirectory()
@@ -58,19 +54,6 @@ export function ModelFolderSection({ onMoveFolder, onDelete }: ModelFolderSectio
     }
   }
 
-  const handleDeleteModel = async () => {
-    setDeleteLoading(true)
-    setDeleteError('')
-    try {
-      await onDelete()
-      setDeleteOpen(false)
-    } catch (err) {
-      setDeleteError(err instanceof Error ? err.message : 'Failed to delete model')
-    } finally {
-      setDeleteLoading(false)
-    }
-  }
-
   const formatBytes = (bytes: number): string => {
     if (bytes === 0) return '0 B'
     const units = ['B', 'KB', 'MB', 'GB', 'TB']
@@ -86,27 +69,15 @@ export function ModelFolderSection({ onMoveFolder, onDelete }: ModelFolderSectio
           <FolderIcon className="text-sidebar-foreground" size={16} />
           <span className="text-sm font-medium">Model Folder</span>
         </div>
-        <div className="flex gap-1">
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-7 gap-1 rounded-none text-xs"
-            onClick={() => setFolderInfoOpen(true)}
-          >
-            <LinkSimpleIcon size={14} />
-            Details
-          </Button>
-          <Button
-            variant="destructive"
-            size="sm"
-            className="h-7 gap-1 rounded-none text-xs"
-            onClick={() => setDeleteOpen(true)}
-            disabled={!modelFolder}
-          >
-            <TrashIcon size={14} />
-            Delete
-          </Button>
-        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-7 gap-1 rounded-none text-xs"
+          onClick={() => setFolderInfoOpen(true)}
+        >
+          <LinkSimpleIcon size={14} />
+          Details
+        </Button>
       </div>
 
       {modelFolder ? (
@@ -260,52 +231,6 @@ export function ModelFolderSection({ onMoveFolder, onDelete }: ModelFolderSectio
               </Button>
             </DialogFooter>
           </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Model Confirmation Dialog */}
-      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-destructive">
-              <TrashIcon size={20} />
-              Delete Model
-            </DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete the model? This will permanently remove the model
-              files from your computer. You will need to re-download it if you want to use it again.
-            </DialogDescription>
-          </DialogHeader>
-          {modelFolder && (
-            <div className="rounded-md border bg-muted/50 p-3">
-              <p className="text-xs text-muted-foreground">Current location:</p>
-              <p className="mt-1 text-xs font-mono text-sidebar-foreground break-all">{modelFolder.path}</p>
-              <p className="mt-2 text-xs text-muted-foreground">Current size:</p>
-              <p className="font-mono text-sm text-sidebar-foreground">
-                {formatBytes(modelFolder.size)}
-              </p>
-            </div>
-          )}
-          {deleteError && (
-            <p className="text-sm text-destructive">{deleteError}</p>
-          )}
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setDeleteOpen(false)}
-              disabled={deleteLoading}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleDeleteModel}
-              disabled={deleteLoading}
-              className="min-w-[80px]"
-            >
-              {deleteLoading ? 'Deleting...' : 'Delete'}
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>
