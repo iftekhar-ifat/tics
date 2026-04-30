@@ -17,13 +17,14 @@ function SettingsPage(): React.JSX.Element {
           <h1 className="text-lg font-semibold tracking-wider">Settings</h1>
         </div>
       </div>
-      <div className="flex-1 overflow-auto p-4 flex gap-4">
-        <div className="flex-1">
+
+      <div className="flex-1 overflow-auto p-4">
+        <div className="grid grid-cols-2 gap-4">
           <FolderSettings />
+          <div className="row-span-2">
+            <IndexingSettings />
+          </div>
           <ModelSettings />
-        </div>
-        <div className="flex-1">
-          <IndexingSettings />
         </div>
       </div>
     </div>

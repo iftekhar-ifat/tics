@@ -66,37 +66,28 @@ export function ModelFolderSection({ onMoveFolder }: ModelFolderSectionProps): R
     <>
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <FolderIcon className="text-sidebar-foreground" size={16} />
-          <span className="text-sm font-medium">Model Folder</span>
+          <FolderIcon className="text-muted-foreground" size={16} />
+          <span className="text-sm font-medium text-muted-foreground">Model Location</span>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-7 gap-1 rounded-none text-xs"
-          onClick={() => setFolderInfoOpen(true)}
-        >
+        <Button variant="outline" size="sm" onClick={() => setFolderInfoOpen(true)}>
           <LinkSimpleIcon size={14} />
           Details
         </Button>
       </div>
 
       {modelFolder ? (
-        <div className="mt-2 flex flex-col gap-1.5 rounded-md border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+        <div className="flex flex-col gap-1.5 px-2 py-1 text-xs text-muted-foreground">
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Location:</span>
-            <span className="max-w-[200px] truncate font-mono text-xs text-sidebar-foreground">
-              {modelFolder.path}
-            </span>
+            <span className="truncate font-mono text-primary">{modelFolder.path}</span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Total Size:</span>
-            <span className="font-mono text-sm text-sidebar-foreground">
-              {formatBytes(modelFolder.size)}
-            </span>
+            <span className="font-mono text-primary">{formatBytes(modelFolder.size)}</span>
           </div>
         </div>
       ) : (
-        <p className="mt-2 text-xs text-muted-foreground/60">No model folder info available</p>
+        <p className="text-xs text-muted-foreground">No model folder info available</p>
       )}
 
       {/* Folder Info Dialog */}
@@ -123,13 +114,13 @@ export function ModelFolderSection({ onMoveFolder }: ModelFolderSectionProps): R
               <>
                 <div className="space-y-2">
                   <Label>Location</Label>
-                  <div className="rounded-md border bg-muted/50 p-2 text-xs font-mono break-all">
+                  <div className="border bg-muted p-2 text-xs font-mono break-all">
                     {modelFolder.path}
                   </div>
                 </div>
                 <div className="space-y-2">
                   <Label>Total Size</Label>
-                  <div className="rounded-md border bg-muted/50 p-2 text-sm font-mono">
+                  <div className="border bg-muted p-2 text-xs font-mono">
                     {formatBytes(modelFolder.size)}
                   </div>
                 </div>
@@ -141,7 +132,7 @@ export function ModelFolderSection({ onMoveFolder }: ModelFolderSectionProps): R
                     setMoveFolderOpen(true)
                   }}
                 >
-                  <FolderIcon className="mr-2 size-4" />
+                  <FolderIcon className="mr-1" />
                   Move Folder to Another Location
                 </Button>
               </>
@@ -179,7 +170,7 @@ export function ModelFolderSection({ onMoveFolder }: ModelFolderSectionProps): R
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>Target Directory</Label>
-              <div className="flex gap-2">
+              <div className="flex gap-2 items-center">
                 <Input
                   value={targetDir}
                   onChange={(e) => {
@@ -202,13 +193,11 @@ export function ModelFolderSection({ onMoveFolder }: ModelFolderSectionProps): R
             </div>
             {moveError && <p className="text-sm text-destructive">{moveError}</p>}
             {modelFolder && (
-              <div className="rounded-md border bg-muted/50 p-3">
+              <div className="bg-primary-foreground p-3">
                 <p className="text-xs text-muted-foreground">Current location:</p>
-                <p className="mt-1 text-xs font-mono text-sidebar-foreground">{modelFolder.path}</p>
+                <p className="mt-1 text-xs font-mono">{modelFolder.path}</p>
                 <p className="mt-2 text-xs text-muted-foreground">Current size:</p>
-                <p className="font-mono text-sm text-sidebar-foreground">
-                  {formatBytes(modelFolder.size)}
-                </p>
+                <p className="mt-1 text-xs font-mono">{formatBytes(modelFolder.size)}</p>
               </div>
             )}
             <DialogFooter>
@@ -225,7 +214,7 @@ export function ModelFolderSection({ onMoveFolder }: ModelFolderSectionProps): R
               <Button
                 onClick={handleMoveFolder}
                 disabled={!targetDir || moveLoading}
-                className="min-w-[80px]"
+                className="min-w-20"
               >
                 {moveLoading ? 'Moving...' : 'Move'}
               </Button>

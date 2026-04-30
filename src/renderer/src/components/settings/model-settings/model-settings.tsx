@@ -14,6 +14,7 @@ import { useBackendEvents } from '@/hooks/use-backend-events'
 import { ModelFolderSection } from './model-folder-section'
 import { ModelDeleteSection } from './model-delete-section'
 import { Progress } from '@/components/ui/progress'
+import { Separator } from '@/components/ui/separator'
 
 export function ModelSettings(): React.JSX.Element {
   const modelStatus = useAppStore((s) => s.modelStatus)
@@ -206,7 +207,7 @@ export function ModelSettings(): React.JSX.Element {
         {modelStatus === 'failed' && (
           <p className="text-xs text-destructive">Download failed. Please retry.</p>
         )}
-
+        <Separator />
         <ModelFolderSection onMoveFolder={handleMoveFolder} />
       </CardContent>
     </Card>
