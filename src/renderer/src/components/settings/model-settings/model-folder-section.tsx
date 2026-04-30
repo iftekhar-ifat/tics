@@ -12,6 +12,7 @@ import {
   DialogFooter,
   DialogDescription
 } from '@/components/ui/dialog'
+import { formatBytes } from '@/utils/helper'
 
 interface ModelFolderSectionProps {
   onMoveFolder: (newDir: string) => Promise<{ path: string; size: number }>
@@ -52,14 +53,6 @@ export function ModelFolderSection({ onMoveFolder }: ModelFolderSectionProps): R
     } finally {
       setMoveLoading(false)
     }
-  }
-
-  const formatBytes = (bytes: number): string => {
-    if (bytes === 0) return '0 B'
-    const units = ['B', 'KB', 'MB', 'GB', 'TB']
-    const i = Math.floor(Math.log(bytes) / Math.log(1024))
-    const value = bytes / Math.pow(1024, i)
-    return `${value.toFixed(2)} ${units[i]}`
   }
 
   return (
