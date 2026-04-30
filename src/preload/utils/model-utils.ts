@@ -158,3 +158,17 @@ export async function moveModelFolder(newDir: string): Promise<{ path: string; s
     throw err
   }
 }
+
+/**
+ * Delete the model folder entirely
+ */
+export async function deleteModelFolder(): Promise<void> {
+  try {
+    const fs = await import('fs/promises')
+    const modelDir = await getModelDir()
+    await fs.rm(modelDir, { recursive: true, force: true })
+  } catch (err) {
+    console.error('[deleteModelFolder] Error:', err)
+    throw err
+  }
+}

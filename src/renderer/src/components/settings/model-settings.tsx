@@ -98,6 +98,18 @@ export function ModelSettings(): React.JSX.Element {
     return result
   }
 
+  const handleDeleteModel = async (): Promise<void> => {
+    try {
+      await window.api.model.deleteModelFolder()
+      useAppStore.getState().setModelFolder(null)
+      setModelStatus('default')
+      setDownloadProgress(0)
+    } catch (err) {
+      console.error('Failed to delete model:', err)
+      throw err
+    }
+  }
+
   return (
     <>
       <Card size="sm">
@@ -179,7 +191,7 @@ export function ModelSettings(): React.JSX.Element {
         </CardContent>
       </Card>
 
-      <ModelFolderSection onMoveFolder={handleMoveFolder} />
+      <ModelFolderSection onMoveFolder={handleMoveFolder} onDelete={handleDeleteModel} />
     </>
   )
 }

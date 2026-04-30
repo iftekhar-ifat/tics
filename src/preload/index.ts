@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { scanFolder } from './utils/file-scanner'
-import { getModelFolderInfo, moveModelFolder } from './utils/model-utils'
+import { getModelFolderInfo, moveModelFolder, deleteModelFolder } from './utils/model-utils'
 
 type UpdateState = {
   status:
@@ -85,30 +85,32 @@ const api = {
       return () => ipcRenderer.removeListener('backend:event', listener)
     }
   },
-   model: {
-     getStatus: () =>
-       ipcRenderer.invoke('model:get-status') as Promise<{
-         ok: boolean
-         data?: { ready: boolean; device: string }
-         message?: string
-       }>,
-     download: () =>
-       ipcRenderer.invoke('model:download') as Promise<{
-         ok: boolean
-         data?: { status: string }
-         message?: string
-       }>,
-     cancelDownload: () =>
-       ipcRenderer.invoke('model:cancel-download') as Promise<{
-         ok: boolean
-         data?: { status: string }
-         message?: string
-       }>,
-     getFolderInfo: () =>
-       getModelFolderInfo(),
-     moveFolder: (newDir: string) =>
-       moveModelFolder(newDir)
-   },
+    model: {
+      getStatus: () =>
+        ipcRenderer.invoke('model:get-status') as Promise<{
+          ok: boolean
+          data?: { ready: boolean; device: string }
+          message?: string
+        }>,
+      download: () =>
+        ipcRenderer.invoke('model:download') as Promise<{
+          ok: boolean
+          data?: { status: string }
+          message?: string
+        }>,
+      cancelDownload: () =>
+        ipcRenderer.invoke('model:cancel-download') as Promise<{
+          ok: boolean
+          data?: { status: string }
+          message?: string
+        }>,
+      getFolderInfo: () =>
+        getModelFolderInfo(),
+      moveFolder: (newDir: string) =>
+        moveModelFolder(newDir),
+      deleteModelFolder: () =>
+        deleteModelFolder()
+    },
   file: {
     openItem: (path: string) => ipcRenderer.invoke('file:open-item', path) as Promise<void>
   }
