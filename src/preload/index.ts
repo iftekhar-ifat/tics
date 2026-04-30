@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { scanFolder } from './utils/file-scanner'
-import { getModelFolderInfo, moveModelFolder, deleteModelFolder } from './utils/model-utils'
+import { getModelFolderInfo, moveModelFolder, deleteModelFolder, adoptModelFolder } from './utils/model-utils'
 
 type UpdateState = {
   status:
@@ -109,7 +109,9 @@ const api = {
       moveFolder: (newDir: string) =>
         moveModelFolder(newDir),
       deleteModelFolder: () =>
-        deleteModelFolder()
+        deleteModelFolder(),
+      adoptModelFolder: (modelFolderPath: string) =>
+        adoptModelFolder(modelFolderPath)
     },
   file: {
     openItem: (path: string) => ipcRenderer.invoke('file:open-item', path) as Promise<void>

@@ -72,6 +72,7 @@ interface Window {
        getFolderInfo: () => Promise<{ path: string; size: number }>
        moveFolder: (newDir: string) => Promise<{ path: string; size: number }>
        deleteModelFolder: () => Promise<void>
+       adoptModelFolder: (modelFolderPath: string) => Promise<{ path: string; size: number }>
      }
     file: {
       openItem: (path: string) => Promise<void>

@@ -172,3 +172,99 @@ export async function deleteModelFolder(): Promise<void> {
     throw err
   }
 }
+
+/**
+ * Validate and adopt an existing model folder
+ * @param modelFolderPath Path to the model folder (should be .../models/clip-vit-b32)
+ * @returns The adopted model folder info
+ */
+export async function adoptModelFolder(modelFolderPath: string): Promise<{ path: string; size: number }> {
+  try {
+    const fs = await import('fs/promises')
+    
+    // Validate that the path exists and is a directory
+    let stat
+    try {
+      stat = await fs.stat(modelFolderPath)
+    } catch {
+      throw new Error('Selected path does not exist')
+    }
+    if (!stat.isDirectory()) {
+      throw new Error('Selected path is not a directory')
+    }
+
+    // Check if the folder name is 'clip-vit-b32' (expected model folder name)
+    const folderName = path.basename(modelFolderPath)
+    if (folderName !== 'clip-vit-b32') {
+      throw new Error('Please select the "clip-vit-b32" folder inside the models directory')
+    }
+
+    // Validate required model files exist
+    const requiredFiles = [
+      'pytorch_model.bin',
+      'config.json',
+      'preprocessor_config.json',
+      'tokenizer.json',
+      'tokenizer_config.json',
+      'vocab.json',
+      'merges.txt'
+    ]
+    
+    for (const file of requiredFiles) {
+      const filePath = path.join(modelFolderPath, file)
+      try {
+        await fs.access(filePath)
+      } catch {
+        throw new Error(`Missing required model file: ${file}`)
+      }
+    }
+
+    // Also check for sentinel file (optional - indicates complete download)
+    const sentinelPath = path.join(modelFolderPath, 'download_complete')
+    try {
+      await fs.access(sentinelPath)
+    } catch {
+      // Sentinel missing but required files exist - we'll still accept it
+      console.warn('[adoptModelFolder] Sentinel file not found, but required files exist')
+    }
+
+    // Calculate folder size
+    const calculateDirSize = async (dir: string): Promise<number> => {
+      let totalSize = 0
+      const entries = await fs.readdir(dir, { withFileTypes: true })
+      for (const entry of entries) {
+        const fullPath = path.join(dir, entry.name)
+        if (entry.isDirectory()) {
+          totalSize += await calculateDirSize(fullPath)
+        } else if (entry.isFile()) {
+          try {
+            const stats = await fs.stat(fullPath)
+            totalSize += stats.size
+          } catch {
+            // ignore errors
+          }
+        }
+      }
+      return totalSize
+    }
+    const size = await calculateDirSize(modelFolderPath)
+
+    // Determine the data directory (parent of the models folder)
+    // modelFolderPath = .../models/clip-vit-b32
+    // So dataDir = path.dirname(path.dirname(modelFolderPath))
+    const dataDir = path.dirname(path.dirname(modelFolderPath))
+
+    // Notify backend about the new data directory
+    try {
+      await ipcRenderer.invoke('model:set-data-dir', dataDir)
+    } catch (err) {
+      console.warn('[adoptModelFolder] Failed to notify backend:', err)
+      // Continue anyway - we've validated the folder
+    }
+
+    return { path: modelFolderPath, size }
+  } catch (err) {
+    console.error('[adoptModelFolder] Error:', err)
+    throw err
+  }
+}

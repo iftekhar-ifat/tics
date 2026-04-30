@@ -110,16 +110,22 @@ export function ModelSettings(): React.JSX.Element {
   }
 
   const handleSelectFolder = async () => {
-    /* try {
-    const result = await window.api.model.selectFolder()
-    if (result?.path) {
-      useAppStore.getState().setModelFolder({ path: result.path, size: result.size })
-      setModelStatus('complete')
-      setDownloadProgress(100)
+    const result = await window.api.dialog.openDirectory()
+    if (result && !result.canceled && result.filePaths.length > 0) {
+      const selectedPath = result.filePaths[0]
+      try {
+        const info = await window.api.model.adoptModelFolder(selectedPath)
+        useAppStore.getState().setModelFolder({
+          path: info.path,
+          size: info.size
+        })
+        setModelStatus('complete')
+        setDownloadProgress(100)
+      } catch (err) {
+        console.error('Invalid model folder:', err)
+        alert(err instanceof Error ? err.message : 'Invalid model folder')
+      }
     }
-  } catch {
-    setModelStatus('failed')
-  } */
   }
 
   return (
