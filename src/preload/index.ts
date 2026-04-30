@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { scanFolder } from './utils/file-scanner'
+import { getModelFolderInfo, moveModelFolder } from './utils/model-utils'
 
 type UpdateState = {
   status:
@@ -22,7 +23,8 @@ type BackendStatus = {
 
 const api = {
   app: {
-    getVersion: () => ipcRenderer.invoke('app:get-version') as Promise<string>
+    getVersion: () => ipcRenderer.invoke('app:get-version') as Promise<string>,
+    getDataDir: () => ipcRenderer.invoke('app:get-data-dir') as Promise<string>
   },
   dialog: {
     openDirectory: () =>
@@ -83,38 +85,30 @@ const api = {
       return () => ipcRenderer.removeListener('backend:event', listener)
     }
   },
-  model: {
-    getStatus: () =>
-      ipcRenderer.invoke('model:get-status') as Promise<{
-        ok: boolean
-        data?: { ready: boolean; device: string }
-        message?: string
-      }>,
-    download: () =>
-      ipcRenderer.invoke('model:download') as Promise<{
-        ok: boolean
-        data?: { status: string }
-        message?: string
-      }>,
-    cancelDownload: () =>
-      ipcRenderer.invoke('model:cancel-download') as Promise<{
-        ok: boolean
-        data?: { status: string }
-        message?: string
-      }>,
-    getFolderInfo: () =>
-      ipcRenderer.invoke('model:get-folder-info') as Promise<{
-        ok: boolean
-        data?: { path: string; size: number }
-        message?: string
-      }>,
-    moveFolder: (newDir: string) =>
-      ipcRenderer.invoke('model:move-folder', newDir) as Promise<{
-        ok: boolean
-        data?: { path: string; size: number }
-        message?: string
-      }>
-  },
+   model: {
+     getStatus: () =>
+       ipcRenderer.invoke('model:get-status') as Promise<{
+         ok: boolean
+         data?: { ready: boolean; device: string }
+         message?: string
+       }>,
+     download: () =>
+       ipcRenderer.invoke('model:download') as Promise<{
+         ok: boolean
+         data?: { status: string }
+         message?: string
+       }>,
+     cancelDownload: () =>
+       ipcRenderer.invoke('model:cancel-download') as Promise<{
+         ok: boolean
+         data?: { status: string }
+         message?: string
+       }>,
+     getFolderInfo: () =>
+       getModelFolderInfo(),
+     moveFolder: (newDir: string) =>
+       moveModelFolder(newDir)
+   },
   file: {
     openItem: (path: string) => ipcRenderer.invoke('file:open-item', path) as Promise<void>
   }

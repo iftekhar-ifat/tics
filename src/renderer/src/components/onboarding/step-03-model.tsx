@@ -17,10 +17,10 @@ export function Step03Model(): React.JSX.Element {
     const loadModelFolderInfo = async () => {
       try {
         const folderResult = await window.api.model.getFolderInfo()
-        if (folderResult.ok && folderResult.data) {
+        if (folderResult) {
           useAppStore.getState().setModelFolder({
-            path: folderResult.data.path,
-            size: folderResult.data.size
+            path: folderResult.path,
+            size: folderResult.size
           })
         }
       } catch {
@@ -52,7 +52,7 @@ export function Step03Model(): React.JSX.Element {
   }, [setDownloadProgress, setModelStatus])
 
   useEffect(() => {
-    const handler = (data: unknown): void => {
+    const handler = async (data: unknown): Promise<void> => {
       const msg = data as {
         type?: string
         data?: { percent?: number; speed?: number }
@@ -69,14 +69,13 @@ export function Step03Model(): React.JSX.Element {
         setDownloadProgress(100)
         setDownloadSpeed(0)
         try {
-          window.api.model.getFolderInfo().then((folderResult) => {
-            if (folderResult.ok && folderResult.data) {
-              useAppStore.getState().setModelFolder({
-                path: folderResult.data.path,
-                size: folderResult.data.size
-              })
-            }
-          })
+          const folderResult = await window.api.model.getFolderInfo()
+          if (folderResult) {
+            useAppStore.getState().setModelFolder({
+              path: folderResult.path,
+              size: folderResult.size
+            })
+          }
         } catch {
           // ignore folder info errors
         }

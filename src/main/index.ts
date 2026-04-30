@@ -1,6 +1,6 @@
 import { app, shell, BrowserWindow, ipcMain, dialog, session } from 'electron'
 import { join } from 'path'
-import { existsSync, readdirSync } from 'fs'
+import { existsSync, readdirSync, readFileSync, writeFileSync } from 'fs'
 import { spawn, ChildProcess } from 'child_process'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { autoUpdater } from 'electron-updater'
@@ -27,6 +27,7 @@ let mainWindow: BrowserWindow | null = null
 let updateState: UpdateState = { status: 'idle' }
 let backendProcess: ChildProcess | null = null
 let backendStatus: 'starting' | 'running' | 'stopped' | 'error' = 'stopped'
+let currentDataDir = app.getPath('userData')
 let backendStopCalled = false
 let requestId = 0
 const pendingRequests = new Map<
@@ -101,12 +102,12 @@ function startBackend(): void {
   try {
     const cmd = is.dev ? finalPythonCmd : backendScript
     const spawnArgs = is.dev ? args : []
-    backendProcess = spawn(cmd, spawnArgs, {
-      cwd: is.dev ? join(__dirname, '../../backend') : join(process.resourcesPath, 'backend'),
-      stdio: ['pipe', 'pipe', 'pipe'],
-      detached: false,
-      env: { ...process.env, TICS_DATA_DIR: app.getPath('userData') }
-    })
+     backendProcess = spawn(cmd, spawnArgs, {
+       cwd: is.dev ? join(__dirname, '../../backend') : join(process.resourcesPath, 'backend'),
+       stdio: ['pipe', 'pipe', 'pipe'],
+       detached: false,
+       env: { ...process.env, TICS_DATA_DIR: currentDataDir }
+     })
 
     backendProcess.stdout?.on('data', (data: Buffer) => {
       stdoutBuffer += data.toString()
@@ -287,6 +288,10 @@ app.whenReady().then(() => {
 
   ipcMain.handle('app:get-version', () => app.getVersion())
 
+  ipcMain.handle('app:get-data-dir', () => {
+    return currentDataDir
+  })
+
   ipcMain.handle('updater:get-state', () => updateState)
 
   ipcMain.handle('updater:check', async () => {
@@ -448,26 +453,39 @@ app.whenReady().then(() => {
     }
   })
 
-  ipcMain.handle('model:get-folder-info', async () => {
-    try {
-      const result = await callBackend('model.getFolderInfo')
-      return { ok: true, data: result }
-    } catch (error) {
-      return { ok: false, message: String(error) }
-    }
-  })
+   ipcMain.handle('model:set-data-dir', async (_event, newDir: string) => {
+     try {
+       // Update the in-memory data directory
+       currentDataDir = newDir
+       // Persist to config file so it survives restarts
+       const configPath = join(app.getPath('userData'), 'tics-config.json')
+       writeFileSync(configPath, JSON.stringify({ dataDir: newDir }, null, 2))
+       // Notify backend process
+       const result = await callBackend('model.setDataDir', { path: newDir })
+       return { ok: true, data: result }
+     } catch (error) {
+       return { ok: false, message: String(error) }
+     }
+    })
 
-  ipcMain.handle('model:move-folder', async (_event, newDir: string) => {
-    try {
-      const result = await callBackend('model.moveFolder', { newDir })
-      return { ok: true, data: result }
-    } catch (error) {
-      return { ok: false, message: String(error) }
-    }
-  })
+    createWindow()
 
-  createWindow()
-  startBackend()
+    // Load persisted data directory configuration
+    try {
+      const configPath = join(app.getPath('userData'), 'tics-config.json')
+      if (existsSync(configPath)) {
+        const configContent = readFileSync(configPath, 'utf-8')
+        const config = JSON.parse(configContent)
+        if (config.dataDir && typeof config.dataDir === 'string') {
+          currentDataDir = config.dataDir
+          console.log('[Main] Loaded custom data directory:', currentDataDir)
+        }
+      }
+    } catch (err) {
+      console.error('[Main] Failed to load config:', err)
+    }
+
+    startBackend()
 
   if (!is.dev) {
     void autoUpdater.checkForUpdates().catch(() => {

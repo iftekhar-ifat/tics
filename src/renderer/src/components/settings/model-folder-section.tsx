@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/dialog'
 
 interface ModelFolderSectionProps {
-  onMoveFolder: (newDir: string) => Promise<{ path: string; size: number } | undefined>
+  onMoveFolder: (newDir: string) => Promise<{ path: string; size: number }>
 }
 
 export function ModelFolderSection({ onMoveFolder }: ModelFolderSectionProps): React.JSX.Element {
@@ -38,20 +38,12 @@ export function ModelFolderSection({ onMoveFolder }: ModelFolderSectionProps): R
     setMoveLoading(true)
     setMoveError('')
     try {
-      const folderData = await onMoveFolder(targetDir)
-      // Update store with result and re-fetch to confirm
-      if (folderData) {
+      // Move the folder and get the new location/size
+      const result = await onMoveFolder(targetDir)
+      if (result) {
         useAppStore.getState().setModelFolder({
-          path: folderData.path,
-          size: folderData.size
-        })
-      }
-      // Also do a fresh getFolderInfo to ensure correctness
-      const result = await window.api.model.getFolderInfo()
-      if (result.ok && result.data) {
-        useAppStore.getState().setModelFolder({
-          path: result.data.path,
-          size: result.data.size
+          path: result.path,
+          size: result.size
         })
       }
       setMoveFolderOpen(false)

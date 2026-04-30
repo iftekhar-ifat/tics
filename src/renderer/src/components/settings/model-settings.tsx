@@ -93,12 +93,9 @@ export function ModelSettings(): React.JSX.Element {
     setDownloadSpeed(0)
   }
 
-  const handleMoveFolder = async (newDir: string) => {
+  const handleMoveFolder = async (newDir: string): Promise<{ path: string; size: number }> => {
     const result = await window.api.model.moveFolder(newDir)
-    if (!result.ok) {
-      throw new Error(result.message || 'Failed to move folder')
-    }
-    return result.data
+    return result
   }
 
   return (
