@@ -63,7 +63,7 @@ export function HardwareInfoPanel() {
   const device = DEVICE_CONFIG[inferenceDevice]
 
   return (
-    <div className="flex flex-col justify-center gap-2.5 rounded-md px-2 py-2 text-xs text-muted-foreground">
+    <div className="flex flex-col justify-center gap-2.5 rounded-md px-2 text-xs text-muted-foreground">
       <div className="flex items-center gap-1.5 min-w-0">
         <MonitorIcon size={16} className="shrink-0 text-sidebar-foreground" />
         <span className="truncate">{os}</span>

@@ -30,7 +30,7 @@ function SettingsPage(): React.JSX.Element {
         </div>
       </div>
       <Separator className="my-2" />
-      <div className="h-25">
+      <div className="h-21">
         <AboutSection />
       </div>
     </div>

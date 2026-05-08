@@ -13,7 +13,7 @@ export function AboutSection(): React.JSX.Element {
   }, [])
 
   return (
-    <div className="px-4 py-2 space-y-2">
+    <div className="px-4 space-y-2">
       <div className="flex gap-2 items-center text-base">
         <AppWindowIcon className="text-muted-foreground" size={24} /> About
       </div>
