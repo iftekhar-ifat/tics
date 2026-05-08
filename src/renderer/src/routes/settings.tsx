@@ -3,6 +3,8 @@ import { GearSixIcon } from '@phosphor-icons/react'
 import FolderSettings from '@/components/settings/folder-settings'
 import { IndexingSettings } from '@/components/settings/indexing-settings'
 import { ModelSettings } from '@/components/settings/model-settings/model-settings'
+import { AboutSection } from '@/components/settings/about-section'
+import { Separator } from '@/components/ui/separator'
 
 export const Route = createFileRoute('/settings')({
   component: SettingsPage
@@ -18,7 +20,7 @@ function SettingsPage(): React.JSX.Element {
         </div>
       </div>
 
-      <div className="flex-1 overflow-auto p-4">
+      <div className="flex flex-1 flex-col overflow-auto p-4">
         <div className="grid grid-cols-2 gap-4">
           <FolderSettings />
           <div className="row-span-2">
@@ -26,6 +28,10 @@ function SettingsPage(): React.JSX.Element {
           </div>
           <ModelSettings />
         </div>
+      </div>
+      <Separator className="my-2" />
+      <div className="h-25">
+        <AboutSection />
       </div>
     </div>
   )

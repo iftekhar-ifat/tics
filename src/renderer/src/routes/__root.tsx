@@ -1,5 +1,4 @@
 import { Outlet, createRootRoute } from '@tanstack/react-router'
-import { UpdateBanner } from '@/components/updater/update-banner'
 import { useAppStore } from '@/stores/app-store'
 import { Onboarding } from '@/components/onboarding/onboarding'
 import { SplashScreen } from '@/components/splash-screen'
@@ -37,7 +36,6 @@ function RootLayout(): React.JSX.Element {
             </ResizablePanel>
           </ResizablePanelGroup>
         </div>
-        <UpdateBanner />
         {!onboardingComplete && <Onboarding />}
       </SidebarProvider>
     </BackendEventsProvider>
