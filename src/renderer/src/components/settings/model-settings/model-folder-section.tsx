@@ -62,10 +62,22 @@ export function ModelFolderSection({ onMoveFolder }: ModelFolderSectionProps): R
           <FolderIcon className="text-muted-foreground" size={16} />
           <span className="text-sm font-medium text-muted-foreground">Model Location</span>
         </div>
-        <Button variant="outline" size="sm" onClick={() => setFolderInfoOpen(true)}>
-          <LinkSimpleIcon size={14} />
-          Details
-        </Button>
+        <div className="flex items-center gap-2">
+          {modelFolder && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => window.api.folder.openFolder(modelFolder.path)}
+            >
+              <FolderIcon size={14} />
+              Show
+            </Button>
+          )}
+          <Button variant="outline" size="sm" onClick={() => setFolderInfoOpen(true)}>
+            <LinkSimpleIcon size={14} />
+            Details
+          </Button>
+        </div>
       </div>
 
       {modelFolder ? (

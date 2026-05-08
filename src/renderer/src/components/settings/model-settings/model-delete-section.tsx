@@ -80,7 +80,7 @@ export function ModelDeleteSection({
               variant="destructive"
               onClick={handleDeleteModel}
               disabled={deleteLoading}
-              className="min-w-[80px]"
+              className="min-w-20"
             >
               {deleteLoading ? 'Deleting...' : 'Delete'}
             </Button>

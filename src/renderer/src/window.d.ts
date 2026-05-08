@@ -19,10 +19,10 @@ type BackendStatus = {
 
 interface Window {
   api: {
-     app: {
-       getVersion: () => Promise<string>
-       getDataDir: () => Promise<string>
-     }
+    app: {
+      getVersion: () => Promise<string>
+      getDataDir: () => Promise<string>
+    }
     dialog: {
       openDirectory: () => Promise<{ canceled: boolean; filePaths: string[] }>
     }
@@ -32,6 +32,7 @@ interface Window {
       getAllImages: (
         dirPath: string
       ) => Promise<{ name: string; path: string; relativePath: string }[]>
+      openFolder: (path: string) => Promise<void>
     }
     system: {
       getOSInfo: () => Promise<{
@@ -53,27 +54,27 @@ interface Window {
       onStatusChanged: (callback: (state: BackendStatus) => void) => () => void
       onEvent: (callback: (event: { type: string; data: unknown }) => void) => () => void
     }
-     model: {
-       getStatus: () => Promise<{
-         ok: boolean
-         data?: { ready: boolean; device: string }
-         message?: string
-       }>
-       download: () => Promise<{
-         ok: boolean
-         data?: { status: string }
-         message?: string
-       }>
-       cancelDownload: () => Promise<{
-         ok: boolean
-         data?: { status: string }
-         message?: string
-       }>
-       getFolderInfo: () => Promise<{ path: string; size: number }>
-       moveFolder: (newDir: string) => Promise<{ path: string; size: number }>
-       deleteModelFolder: () => Promise<void>
-       adoptModelFolder: (modelFolderPath: string) => Promise<{ path: string; size: number }>
-     }
+    model: {
+      getStatus: () => Promise<{
+        ok: boolean
+        data?: { ready: boolean; device: string }
+        message?: string
+      }>
+      download: () => Promise<{
+        ok: boolean
+        data?: { status: string }
+        message?: string
+      }>
+      cancelDownload: () => Promise<{
+        ok: boolean
+        data?: { status: string }
+        message?: string
+      }>
+      getFolderInfo: () => Promise<{ path: string; size: number }>
+      moveFolder: (newDir: string) => Promise<{ path: string; size: number }>
+      deleteModelFolder: () => Promise<void>
+      adoptModelFolder: (modelFolderPath: string) => Promise<{ path: string; size: number }>
+    }
     file: {
       openItem: (path: string) => Promise<void>
     }

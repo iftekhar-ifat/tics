@@ -82,33 +82,37 @@ export function registerIpcHandlers(): void {
     }
   })
 
-   ipcMain.handle('folder:list-subdirs', async (_event, dirPath: string) => {
-     try {
-       if (!existsSync(dirPath)) return []
-       const entries = readdirSync(dirPath, { withFileTypes: true })
-       return entries
-         .filter((entry) => entry.isDirectory())
-         .map((entry) => ({
-           name: entry.name,
-           path: join(dirPath, entry.name)
-         }))
-     } catch (error) {
-       console.error('folder:list-subdirs error:', error)
-       return []
-     }
-   })
+  ipcMain.handle('folder:open-folder', async (_event, path: string) => {
+    await shell.openPath(path)
+  })
 
-   ipcMain.handle('folder:get-all-images', async (_event, dirPath: string) => {
-     try {
-       if (!existsSync(dirPath)) return []
-       return getAllImages(dirPath, dirPath)
-     } catch (error) {
-       console.error('folder:get-all-images error:', error)
-       return []
-     }
-   })
+  ipcMain.handle('folder:list-subdirs', async (_event, dirPath: string) => {
+    try {
+      if (!existsSync(dirPath)) return []
+      const entries = readdirSync(dirPath, { withFileTypes: true })
+      return entries
+        .filter((entry) => entry.isDirectory())
+        .map((entry) => ({
+          name: entry.name,
+          path: join(dirPath, entry.name)
+        }))
+    } catch (error) {
+      console.error('folder:list-subdirs error:', error)
+      return []
+    }
+  })
 
-   // File open
+  ipcMain.handle('folder:get-all-images', async (_event, dirPath: string) => {
+    try {
+      if (!existsSync(dirPath)) return []
+      return getAllImages(dirPath, dirPath)
+    } catch (error) {
+      console.error('folder:get-all-images error:', error)
+      return []
+    }
+  })
+
+  // File open
   ipcMain.handle('file:open-item', async (_event, filePath: string) => {
     try {
       await shell.openPath(filePath)
