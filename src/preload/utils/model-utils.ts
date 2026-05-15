@@ -90,7 +90,7 @@ export async function moveModelFolder(newDir: string): Promise<{ path: string; s
         for (const entry of entries) {
           const srcPath = path.join(src, entry.name)
           const destPath = path.join(dest, entry.name)
-          
+
           if (entry.isDirectory()) {
             await fs.mkdir(destPath, { recursive: true })
             await copyDir(srcPath, destPath)
@@ -178,10 +178,12 @@ export async function deleteModelFolder(): Promise<void> {
  * @param modelFolderPath Path to the model folder (should be .../models/clip-vit-b32)
  * @returns The adopted model folder info
  */
-export async function adoptModelFolder(modelFolderPath: string): Promise<{ path: string; size: number }> {
+export async function adoptModelFolder(
+  modelFolderPath: string
+): Promise<{ path: string; size: number }> {
   try {
     const fs = await import('fs/promises')
-    
+
     // Validate that the path exists and is a directory
     let stat
     try {
@@ -209,7 +211,7 @@ export async function adoptModelFolder(modelFolderPath: string): Promise<{ path:
       'vocab.json',
       'merges.txt'
     ]
-    
+
     for (const file of requiredFiles) {
       const filePath = path.join(modelFolderPath, file)
       try {

@@ -115,6 +115,36 @@ const api = {
     deleteModelFolder: () => deleteModelFolder(),
     adoptModelFolder: (modelFolderPath: string) => adoptModelFolder(modelFolderPath)
   },
+  indexing: {
+    start: (rootPath: string, totalImages: number) =>
+      ipcRenderer.invoke('indexing:start', rootPath, totalImages) as Promise<{
+        ok: boolean
+        data?: { status: string }
+        message?: string
+      }>,
+    getStatus: () =>
+      ipcRenderer.invoke('indexing:get-status') as Promise<{
+        ok: boolean
+        data?: {
+          state: 'idle' | 'running' | 'paused' | 'complete'
+          indexed: number
+          total: number
+        }
+        message?: string
+      }>,
+    cancel: () =>
+      ipcRenderer.invoke('indexing:cancel') as Promise<{
+        ok: boolean
+        data?: { status: string }
+        message?: string
+      }>,
+    clear: (rootPath: string) =>
+      ipcRenderer.invoke('indexing:clear', rootPath) as Promise<{
+        ok: boolean
+        data?: { status: string }
+        message?: string
+      }>
+  },
   file: {
     openItem: (path: string) => ipcRenderer.invoke('file:open-item', path) as Promise<void>
   }

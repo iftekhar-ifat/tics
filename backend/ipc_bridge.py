@@ -14,6 +14,7 @@ from model_manager import (
     _delete_model_files,
 )
 from hardware_info import get_system_info
+from indexing import start_indexing, get_indexing_status, cancel_indexing, clear_index
 
 
 def push_event(event_type: str, data: dict = None):
@@ -96,12 +97,43 @@ async def handle_request(request):
             return {"ok": True}
         return {"ok": False, "error": "No path provided"}
 
+    async def handle_indexing_start(p):
+        root_path = p.get("path", "")
+        total_images = p.get("totalImages", 0)
+
+        def _on_indexing_event(event: dict):
+            event_type = event.get("type", "unknown")
+            event_data = {k: v for k, v in event.items() if k != "type"}
+            push_event(event_type, event_data)
+
+        result = start_indexing(_on_indexing_event, root_path, total_images)
+        return result
+
+    async def handle_indexing_get_status(_p):
+        return get_indexing_status()
+
+    async def handle_indexing_cancel(_p):
+        cancel_indexing()
+        return {"status": "cancelled"}
+
+    async def handle_index_clear(p):
+        root_path = p.get("path", "")
+        if root_path:
+            cancel_indexing()
+            clear_index(root_path)
+            return {"status": "cleared"}
+        return {"status": "error", "error": "No root path provided"}
+
     handlers = {
         "system.getOSInfo": lambda p: get_system_info(),
         "model.getStatus": handle_model_get_status,
         "model.download": handle_model_download,
         "model.cancelDownload": handle_model_cancel,
         "model.setDataDir": handle_model_set_data_dir,
+        "indexing.start": handle_indexing_start,
+        "indexing.getStatus": handle_indexing_get_status,
+        "indexing.cancel": handle_indexing_cancel,
+        "index.clear": handle_index_clear,
     }
 
     try:

@@ -2,11 +2,7 @@ import { spawn, ChildProcess } from 'child_process'
 import { join } from 'path'
 import { existsSync } from 'fs'
 import { is } from '@electron-toolkit/utils'
-import {
-  setBackendStatus,
-  getBackendStatus,
-  getMainWindow
-} from './state'
+import { setBackendStatus, getBackendStatus, getMainWindow } from './state'
 
 let backendProcess: ChildProcess | null = null
 let requestId = 0

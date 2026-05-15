@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useOnboardingStore } from '@/stores/onboarding-store'
 import { useAppStore } from '@/stores/app-store'
+import { useBackendEvents } from '@/hooks/use-backend-events'
 import { Button } from '@/components/ui/button'
 
 export function Step04Index(): React.JSX.Element {
@@ -9,12 +10,28 @@ export function Step04Index(): React.JSX.Element {
   const indexingProgress = useAppStore((s) => s.indexingProgress)
   const indexingComplete = useAppStore((s) => s.indexingComplete)
   const [isIndexing, setIsIndexing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const { onMessage } = useBackendEvents()
 
-  const totalImages = folderInfo?.imageCount ?? 3421
+  const totalImages = folderInfo?.imageCount ?? 0
 
-  const handleStartIndexing = () => {
+  const handleStartIndexing = async () => {
+    if (!folderInfo) return
     setIsIndexing(true)
+    setError(null)
     setIndexingProgress(0)
+    setIndexingComplete(false)
+
+    try {
+      const result = await window.api.indexing.start(folderInfo.path, totalImages)
+      if (!result.ok) {
+        setError(result.message ?? 'Failed to start indexing')
+        setIsIndexing(false)
+      }
+    } catch (err) {
+      setError(String(err))
+      setIsIndexing(false)
+    }
   }
 
   const handleSkip = () => {
@@ -26,29 +43,24 @@ export function Step04Index(): React.JSX.Element {
   }
 
   useEffect(() => {
-    if (isIndexing && !indexingComplete) {
-      const interval = setInterval(() => {
-        setIndexingProgress(indexingProgress + 100)
-        if (indexingProgress >= totalImages) {
-          setIndexingComplete(true)
-          clearInterval(interval)
-        }
-      }, 50)
-      return () => clearInterval(interval)
-    }
-    return undefined
-  }, [
-    isIndexing,
-    indexingProgress,
-    indexingComplete,
-    totalImages,
-    setIndexingProgress,
-    setIndexingComplete
-  ])
+    const unsub = onMessage((data: unknown) => {
+      const event = data as { type: string; data: { indexed?: number; total?: number } }
+      if (event.type === 'indexing_progress') {
+        setIndexingProgress(event.data.indexed ?? 0)
+      } else if (event.type === 'indexing_complete') {
+        setIndexingProgress(event.data.indexed ?? totalImages)
+        setIndexingComplete(true)
+      } else if (event.type === 'indexing_error') {
+        setError('Indexing was cancelled or failed')
+        setIsIndexing(false)
+      }
+    })
+    return unsub
+  }, [onMessage, setIndexingProgress, setIndexingComplete, totalImages])
 
   if (isIndexing || indexingComplete) {
     const progress = Math.min(indexingProgress, totalImages)
-    const percentage = Math.round((progress / totalImages) * 100)
+    const percentage = totalImages > 0 ? Math.round((progress / totalImages) * 100) : 0
 
     return (
       <div className="space-y-4">
@@ -59,6 +71,7 @@ export function Step04Index(): React.JSX.Element {
           {progress.toLocaleString()} / {totalImages.toLocaleString()}
           {indexingComplete ? ' · Done' : ` · ${percentage}%`}
         </p>
+        {error && <p className="text-xs text-destructive">{error}</p>}
         {indexingComplete ? (
           <Button onClick={completeOnboarding}>Go to App</Button>
         ) : (
@@ -82,8 +95,11 @@ export function Step04Index(): React.JSX.Element {
           Indexing lets Tics search your images. You can start now or do it later.
         </p>
       </div>
+      {error && <p className="text-xs text-destructive">{error}</p>}
       <div className="flex gap-3">
-        <Button onClick={handleStartIndexing}>Start Indexing</Button>
+        <Button onClick={handleStartIndexing} disabled={totalImages === 0}>
+          Start Indexing
+        </Button>
         <Button variant="ghost" onClick={handleSkip}>
           Skip for now
         </Button>

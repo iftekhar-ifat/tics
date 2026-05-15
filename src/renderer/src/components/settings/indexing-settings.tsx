@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import {
   ImagesIcon,
   PlayIcon,
@@ -9,6 +9,8 @@ import {
   PlusCircleIcon,
   FileImageIcon
 } from '@phosphor-icons/react'
+import { useAppStore } from '@/stores/app-store'
+import { useBackendEvents } from '@/hooks/use-backend-events'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
@@ -22,16 +24,8 @@ interface IndexingStatus {
   total: number
   imgsPerSec: number
   state: IndexingState
-  newImages: number // unindexed images detected by watcher
+  newImages: number
 }
-
-const MOCK_TOTAL = 4821
-const TICK_INTERVAL_MS = 80
-const IMGS_PER_TICK = 6
-
-// Simulates watcher detecting new images after a delay (mock only)
-const MOCK_NEW_IMAGES_DELAY_MS = 3000
-const MOCK_NEW_IMAGES_COUNT = 17
 
 function StatRow({ label, value }: { label: string; value: string }) {
   return (
@@ -91,81 +85,90 @@ function StateBadge({ state, newImages }: { state: IndexingState; newImages: num
 }
 
 export function IndexingSettings() {
+  const rootFolder = useAppStore((s) => s.rootFolder)
+  const { onMessage } = useBackendEvents()
+
   const [status, setStatus] = useState<IndexingStatus>({
-    indexed: 1340,
-    total: MOCK_TOTAL,
+    indexed: 0,
+    total: rootFolder?.imageCount ?? 0,
     imgsPerSec: 0,
-    state: 'paused',
+    state: 'idle',
     newImages: 0
   })
 
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const newImagesTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Subscribe to backend indexing events
+  useEffect(() => {
+    const unsub = onMessage((data: unknown) => {
+      const event = data as {
+        type: string
+        data: { indexed?: number; total?: number; imgsPerSec?: number }
+      }
+      if (event.type === 'indexing_progress') {
+        setStatus((prev) => ({
+          ...prev,
+          indexed: event.data.indexed ?? prev.indexed,
+          total: event.data.total ?? prev.total,
+          imgsPerSec: event.data.imgsPerSec ?? 0,
+          state: 'running'
+        }))
+      } else if (event.type === 'indexing_complete') {
+        setStatus((prev) => ({
+          ...prev,
+          indexed: event.data.indexed ?? prev.total,
+          state: 'complete',
+          imgsPerSec: 0
+        }))
+      } else if (event.type === 'indexing_error') {
+        setStatus((prev) => ({ ...prev, state: 'idle', imgsPerSec: 0 }))
+      }
+    })
+    return unsub
+  }, [onMessage])
 
-  const clearTick = useCallback(() => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current)
-      intervalRef.current = null
-    }
+  // Get initial state from backend on mount
+  useEffect(() => {
+    window.api.indexing.getStatus().then((result) => {
+      if (result.ok && result.data) {
+        setStatus((prev) => ({
+          ...prev,
+          state: result.data!.state,
+          indexed: result.data!.indexed,
+          total: result.data!.total || prev.total
+        }))
+      }
+    })
   }, [])
 
-  const startTick = useCallback(() => {
-    clearTick()
-    intervalRef.current = setInterval(() => {
-      setStatus((prev) => {
-        if (prev.state !== 'running') return prev
-        const next = Math.min(prev.indexed + IMGS_PER_TICK, prev.total)
-        const done = next >= prev.total
-        return {
-          ...prev,
-          indexed: next,
-          imgsPerSec: done ? 0 : Math.round((1000 / TICK_INTERVAL_MS) * IMGS_PER_TICK),
-          state: done ? 'complete' : 'running'
-        }
-      })
-    }, TICK_INTERVAL_MS)
-  }, [clearTick])
-
-  // Mock: simulate watcher pushing new images some time after completion
-  useEffect(() => {
-    if (status.state === 'complete' && status.newImages === 0) {
-      newImagesTimerRef.current = setTimeout(() => {
-        setStatus((p) => ({ ...p, newImages: MOCK_NEW_IMAGES_COUNT }))
-      }, MOCK_NEW_IMAGES_DELAY_MS)
+  const handleStart = async () => {
+    if (!rootFolder) return
+    setStatus((prev) => ({ ...prev, indexed: 0, state: 'running' }))
+    const result = await window.api.indexing.start(rootFolder.path, rootFolder.imageCount)
+    if (!result.ok) {
+      setStatus((prev) => ({ ...prev, state: 'idle' }))
     }
-    return () => {
-      if (newImagesTimerRef.current) clearTimeout(newImagesTimerRef.current)
-    }
-  }, [status.state, status.newImages])
-
-  useEffect(() => {
-    if (status.state === 'running') startTick()
-    else clearTick()
-    return clearTick
-  }, [status.state, startTick, clearTick])
-
-  const handleStart = () => setStatus((p) => ({ ...p, state: 'running' }))
-  const handleStop = () => setStatus((p) => ({ ...p, state: 'paused', imgsPerSec: 0 }))
-
-  // Re-index: wipe everything, start fresh
-  const handleReindex = () => {
-    clearTick()
-    setStatus({ indexed: 0, total: MOCK_TOTAL, imgsPerSec: 0, state: 'idle', newImages: 0 })
   }
 
-  // Index new: append new images to the existing index
-  const handleIndexNew = () => {
-    setStatus((p) => ({
-      ...p,
-      total: p.indexed + p.newImages,
-      newImages: 0,
-      state: 'running'
-    }))
+  const handleStop = async () => {
+    await window.api.indexing.cancel()
+    setStatus((prev) => ({ ...prev, state: 'idle', imgsPerSec: 0 }))
+  }
+
+  const handleReindex = async () => {
+    if (!rootFolder) return
+    await window.api.indexing.clear(rootFolder.path)
+    setStatus({
+      indexed: 0,
+      total: rootFolder.imageCount,
+      state: 'idle',
+      imgsPerSec: 0,
+      newImages: 0
+    })
   }
 
   const { indexed, total, state, newImages } = status
-  const remaining = total - indexed
-  const pct = total > 0 ? Math.round((indexed / total) * 100) : 0
+  const displayTotal = total || rootFolder?.imageCount || 0
+  const remaining = displayTotal - indexed
+  const pct = displayTotal > 0 ? Math.round((indexed / displayTotal) * 100) : 0
   const isRunning = state === 'running'
   const isComplete = state === 'complete'
   const hasNew = isComplete && newImages > 0
@@ -192,7 +195,7 @@ export function IndexingSettings() {
           <div className="flex flex-col gap-1">
             <StatRow
               label="Indexed"
-              value={`${indexed.toLocaleString()} / ${total.toLocaleString()}`}
+              value={`${indexed.toLocaleString()} / ${displayTotal.toLocaleString()}`}
             />
             <StatRow label="Remaining" value={remaining > 0 ? remaining.toLocaleString() : '—'} />
             <StatRow label="Progress" value={`${pct}%`} />
@@ -229,7 +232,7 @@ export function IndexingSettings() {
                   variant="default"
                   size="sm"
                   className="w-full text-xs"
-                  onClick={handleIndexNew}
+                  onClick={handleReindex}
                 >
                   <PlusCircleIcon size={12} />
                   Index New ({newImages})

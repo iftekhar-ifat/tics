@@ -75,6 +75,35 @@ interface Window {
       deleteModelFolder: () => Promise<void>
       adoptModelFolder: (modelFolderPath: string) => Promise<{ path: string; size: number }>
     }
+    indexing: {
+      start: (
+        rootPath: string,
+        totalImages: number
+      ) => Promise<{
+        ok: boolean
+        data?: { status: string }
+        message?: string
+      }>
+      getStatus: () => Promise<{
+        ok: boolean
+        data?: {
+          state: 'idle' | 'running' | 'paused' | 'complete'
+          indexed: number
+          total: number
+        }
+        message?: string
+      }>
+      cancel: () => Promise<{
+        ok: boolean
+        data?: { status: string }
+        message?: string
+      }>
+      clear: (rootPath: string) => Promise<{
+        ok: boolean
+        data?: { status: string }
+        message?: string
+      }>
+    }
     file: {
       openItem: (path: string) => Promise<void>
     }

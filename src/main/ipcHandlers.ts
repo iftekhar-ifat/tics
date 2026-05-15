@@ -1,5 +1,5 @@
 import { ipcMain, dialog, shell, app } from 'electron'
-import { existsSync, readdirSync } from 'fs'
+import { existsSync, readdirSync, statSync } from 'fs'
 import { join } from 'path'
 import { autoUpdater } from 'electron-updater'
 
@@ -20,6 +20,8 @@ const IMAGE_EXTENSIONS = [
   '.tiff',
   '.tif'
 ]
+
+const IMAGE_EXTENSIONS_SET = new Set(IMAGE_EXTENSIONS)
 
 function getAllImages(
   dirPath: string,
@@ -53,6 +55,39 @@ function getAllImages(
   return images
 }
 
+function scanFolderSync(dirPath: string): { imageCount: number; totalSize: number } {
+  let imageCount = 0
+  let totalSize = 0
+
+  try {
+    const entries = readdirSync(dirPath, { withFileTypes: true })
+
+    for (const entry of entries) {
+      const fullPath = join(dirPath, entry.name)
+
+      if (entry.isDirectory()) {
+        const sub = scanFolderSync(fullPath)
+        imageCount += sub.imageCount
+        totalSize += sub.totalSize
+      } else if (entry.isFile()) {
+        const ext = entry.name.toLowerCase().slice(entry.name.lastIndexOf('.'))
+        if (IMAGE_EXTENSIONS_SET.has(ext)) {
+          imageCount++
+          try {
+            totalSize += statSync(fullPath).size
+          } catch {
+            // skip unreadable files
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error scanning directory:', error)
+  }
+
+  return { imageCount, totalSize }
+}
+
 export function registerIpcHandlers(): void {
   // App
   ipcMain.handle('app:get-version', () => {
@@ -75,7 +110,8 @@ export function registerIpcHandlers(): void {
   // Folder operations
   ipcMain.handle('folder:scan', async (_event, dirPath: string) => {
     try {
-      return await callBackend('folder.scan', { path: dirPath })
+      if (!existsSync(dirPath)) return { imageCount: 0, totalSize: 0 }
+      return scanFolderSync(dirPath)
     } catch (error) {
       console.error('folder:scan error:', error)
       return { imageCount: 0, totalSize: 0 }
@@ -168,6 +204,43 @@ export function registerIpcHandlers(): void {
     try {
       persistDataDir(newDir)
       const result = await callBackend('model.setDataDir', { path: newDir })
+      return { ok: true, data: result }
+    } catch (error) {
+      return { ok: false, message: String(error) }
+    }
+  })
+
+  // Indexing
+  ipcMain.handle('indexing:start', async (_event, rootPath: string, totalImages: number) => {
+    try {
+      const result = await callBackend('indexing.start', { path: rootPath, totalImages })
+      return { ok: true, data: result }
+    } catch (error) {
+      return { ok: false, message: String(error) }
+    }
+  })
+
+  ipcMain.handle('indexing:get-status', async () => {
+    try {
+      const result = await callBackend('indexing.getStatus')
+      return { ok: true, data: result }
+    } catch (error) {
+      return { ok: false, message: String(error) }
+    }
+  })
+
+  ipcMain.handle('indexing:cancel', async () => {
+    try {
+      const result = await callBackend('indexing.cancel')
+      return { ok: true, data: result }
+    } catch (error) {
+      return { ok: false, message: String(error) }
+    }
+  })
+
+  ipcMain.handle('indexing:clear', async (_event, rootPath: string) => {
+    try {
+      const result = await callBackend('index.clear', { path: rootPath })
       return { ok: true, data: result }
     } catch (error) {
       return { ok: false, message: String(error) }
