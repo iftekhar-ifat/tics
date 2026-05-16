@@ -19,9 +19,12 @@ def _read_config(tics_dir: Path) -> dict:
         return {"indexed": 0}
 
 
-def _write_config(tics_dir: Path, indexed: int):
+def _write_config(tics_dir: Path, indexed: int, root_path: str = ""):
+    config = {"indexed": indexed}
+    if root_path:
+        config["rootPath"] = root_path
     with open(tics_dir / "config.json", "w") as f:
-        json.dump({"indexed": indexed}, f, indent=2)
+        json.dump(config, f, indent=2)
 
 
 def _ensure_tics_folder(root_path: str) -> Path:
@@ -50,7 +53,7 @@ def _process_single_image(image_index: int, tics_dir: Path):
 
 def _simulate_indexing(push_event, root_path: str, total_images: int, offset: int = 0):
     tics_dir = _ensure_tics_folder(root_path)
-    _write_config(tics_dir, offset)
+    _write_config(tics_dir, offset, root_path)
 
     push_event(
         {
@@ -69,7 +72,7 @@ def _simulate_indexing(push_event, root_path: str, total_images: int, offset: in
             return
 
         _process_single_image(i, tics_dir)
-        _write_config(tics_dir, i)
+        _write_config(tics_dir, i, root_path)
 
         now = time.time()
         if now - last_push >= 0.2 or i == total_images:
