@@ -104,7 +104,6 @@ declare global {
           data?: {
             state: 'idle' | 'running' | 'paused' | 'complete'
             indexed: number
-            total: number
           }
           message?: string
         }>

@@ -21,7 +21,6 @@ type IndexingState = 'idle' | 'running' | 'paused' | 'complete'
 
 interface IndexingStatus {
   indexed: number
-  total: number
   imgsPerSec: number
   state: IndexingState
 }
@@ -92,7 +91,6 @@ export function IndexingSettings() {
 
   const [status, setStatus] = useState<IndexingStatus>({
     indexed: 0,
-    total: folderStats.imageCount,
     imgsPerSec: 0,
     state: 'idle'
   })
@@ -110,7 +108,6 @@ export function IndexingSettings() {
         type: string
         data: {
           indexed?: number
-          total?: number
           imgsPerSec?: number
         }
       }
@@ -119,7 +116,6 @@ export function IndexingSettings() {
         setStatus((prev) => ({
           ...prev,
           indexed: event.data.indexed ?? prev.indexed,
-          total: event.data.total ?? prev.total,
           imgsPerSec: event.data.imgsPerSec ?? 0,
           state: 'running'
         }))
@@ -127,7 +123,7 @@ export function IndexingSettings() {
         setIndexedBaseline(folderImageCountRef.current)
         setStatus((prev) => ({
           ...prev,
-          indexed: event.data.indexed ?? prev.total,
+          indexed: event.data.indexed ?? prev.indexed,
           state: 'complete',
           imgsPerSec: 0
         }))
@@ -145,8 +141,7 @@ export function IndexingSettings() {
         setStatus((prev) => ({
           ...prev,
           state: result.data!.state,
-          indexed: result.data!.indexed,
-          total: result.data!.total || prev.total
+          indexed: result.data!.indexed
         }))
       }
     })
@@ -172,7 +167,6 @@ export function IndexingSettings() {
     setIndexedBaseline(0)
     setStatus({
       indexed: 0,
-      total: folderStats.imageCount,
       state: 'idle',
       imgsPerSec: 0
     })
@@ -180,24 +174,27 @@ export function IndexingSettings() {
 
   const handleIndexNew = async () => {
     if (!rootFolder) return
-    const newTotal = folderStats.imageCount
     setStatus((prev) => ({
       ...prev,
       indexed: indexedBaseline,
-      total: newTotal,
       state: 'running'
     }))
-    const result = await window.api.indexing.start(rootFolder.path, newTotal, indexedBaseline)
+    const result = await window.api.indexing.start(
+      rootFolder.path,
+      folderStats.imageCount,
+      indexedBaseline
+    )
     if (!result.ok) {
       setStatus((prev) => ({ ...prev, state: 'idle' }))
     }
   }
 
-  const { indexed, total, state } = status
+  const { indexed, state } = status
   const newImages = Math.max(0, folderStats.imageCount - indexedBaseline)
-  const displayTotal = folderStats.imageCount || total || 0
-  const remaining = displayTotal - indexed
-  const pct = displayTotal > 0 ? Math.round((indexed / displayTotal) * 100) : 0
+  const displayTotal = folderStats.imageCount || 0
+  const safeIndexed = Math.min(indexed, displayTotal)
+  const remaining = displayTotal - safeIndexed
+  const pct = displayTotal > 0 ? Math.round((safeIndexed / displayTotal) * 100) : 0
   const isRunning = state === 'running'
   const isComplete = state === 'complete'
   const hasNew = isComplete && newImages > 0
@@ -224,7 +221,7 @@ export function IndexingSettings() {
           <div className="flex flex-col gap-1">
             <StatRow
               label="Indexed"
-              value={`${indexed.toLocaleString()} / ${displayTotal.toLocaleString()}`}
+              value={`${safeIndexed.toLocaleString()} / ${displayTotal.toLocaleString()}`}
             />
             <StatRow label="Remaining" value={remaining > 0 ? remaining.toLocaleString() : '—'} />
             <StatRow label="Progress" value={`${pct}%`} />
