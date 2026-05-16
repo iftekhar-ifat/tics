@@ -6,7 +6,9 @@ import { FolderOpenIcon, Spinner } from '@phosphor-icons/react'
 
 export function Step01Library(): React.JSX.Element {
   const { setFolderInfo } = useOnboardingStore()
+  const setFolderStats = useAppStore((s) => s.setFolderStats)
   const folderInfo = useAppStore((s) => s.rootFolder)
+  const folderStats = useAppStore((s) => s.folderStats)
   const [scanning, setScanning] = useState(false)
 
   const handleBrowseFolder = async () => {
@@ -17,12 +19,8 @@ export function Step01Library(): React.JSX.Element {
       setScanning(true)
       try {
         const { imageCount, totalSize } = await window.api.folder.scanFolder(path)
-        setFolderInfo({
-          path,
-          name,
-          imageCount,
-          totalSize
-        })
+        setFolderInfo({ path, name })
+        setFolderStats({ imageCount, totalSize })
       } finally {
         setScanning(false)
       }
@@ -51,8 +49,8 @@ export function Step01Library(): React.JSX.Element {
           <p className="font-medium text-sm">{folderInfo.name}</p>
           <p className="mt-1 font-mono text-xs text-muted-foreground">{folderInfo.path}</p>
           <div className="mt-3 flex gap-4 text-xs text-muted-foreground">
-            <span>{formatNumber(folderInfo.imageCount)} images found</span>
-            <span>{formatSize(folderInfo.totalSize)}</span>
+            <span>{formatNumber(folderStats.imageCount)} images found</span>
+            <span>{formatSize(folderStats.totalSize)}</span>
           </div>
         </div>
         <button

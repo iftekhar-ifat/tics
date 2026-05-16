@@ -115,9 +115,30 @@ const api = {
     deleteModelFolder: () => deleteModelFolder(),
     adoptModelFolder: (modelFolderPath: string) => adoptModelFolder(modelFolderPath)
   },
+  watcher: {
+    start: (rootPath: string) =>
+      ipcRenderer.invoke('watcher:start', rootPath) as Promise<{ ok: boolean; message?: string }>,
+    stop: () => ipcRenderer.invoke('watcher:stop') as Promise<{ ok: boolean }>,
+    getStatus: () =>
+      ipcRenderer.invoke('watcher:get-status') as Promise<{ watching: boolean; rootPath: string }>
+  },
+  folderWatcher: {
+    start: (rootPath: string) =>
+      ipcRenderer.invoke('folder-watcher:start', rootPath) as Promise<{
+        ok: boolean
+        message?: string
+      }>,
+    stop: () => ipcRenderer.invoke('folder-watcher:stop') as Promise<{ ok: boolean }>,
+    onUpdate: (callback: (data: { imageCount: number; totalSize: number }) => void) => {
+      const handler = (_event: unknown, data: { imageCount: number; totalSize: number }) =>
+        callback(data)
+      ipcRenderer.on('folder-watcher:update', handler)
+      return () => ipcRenderer.removeListener('folder-watcher:update', handler)
+    }
+  },
   indexing: {
-    start: (rootPath: string, totalImages: number) =>
-      ipcRenderer.invoke('indexing:start', rootPath, totalImages) as Promise<{
+    start: (rootPath: string, totalImages: number, indexedSoFar: number = 0) =>
+      ipcRenderer.invoke('indexing:start', rootPath, totalImages, indexedSoFar) as Promise<{
         ok: boolean
         data?: { status: string }
         message?: string

@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import {
   FolderOpenIcon,
   SwapIcon,
@@ -13,7 +14,9 @@ import { formatBytes } from '@/utils/helper'
 
 export default function FolderSettings() {
   const rootFolder = useAppStore((s) => s.rootFolder)
+  const folderStats = useAppStore((s) => s.folderStats)
   const setRootFolder = useAppStore((s) => s.setRootFolder)
+  const setFolderStats = useAppStore((s) => s.setFolderStats)
 
   const handleChangeRootFolder = async () => {
     const result = await window.api.dialog.openDirectory()
@@ -21,14 +24,26 @@ export default function FolderSettings() {
       const path = result.filePaths[0]
       const name = path.split(/[/\\]/).pop() || path
       const scanResult = await window.api.folder.scanFolder(path)
-      setRootFolder({
-        path,
-        name,
-        imageCount: scanResult.imageCount,
-        totalSize: scanResult.totalSize
-      })
+      setRootFolder({ path, name })
+      setFolderStats({ imageCount: scanResult.imageCount, totalSize: scanResult.totalSize })
     }
   }
+
+  // Watch the current root folder for file changes and update stats in real time
+  useEffect(() => {
+    if (!rootFolder?.path) return
+
+    window.api.folderWatcher.start(rootFolder.path)
+
+    const unsub = window.api.folderWatcher.onUpdate((data) => {
+      setFolderStats({ imageCount: data.imageCount, totalSize: data.totalSize })
+    })
+
+    return () => {
+      unsub()
+      window.api.folderWatcher.stop()
+    }
+  }, [rootFolder?.path, setFolderStats])
 
   return (
     <Card size="sm">
@@ -55,11 +70,11 @@ export default function FolderSettings() {
             <div className="flex gap-4 text-sm text-muted-foreground">
               <span className="flex items-center gap-1">
                 <ImageIcon size={14} />
-                {rootFolder.imageCount.toLocaleString()} images
+                {folderStats.imageCount.toLocaleString()} images
               </span>
               <span className="flex items-center gap-1">
                 <HardDriveIcon size={14} />
-                {formatBytes(rootFolder.totalSize)}
+                {formatBytes(folderStats.totalSize)}
               </span>
             </div>
           </>

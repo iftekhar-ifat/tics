@@ -3,27 +3,29 @@ import { useOnboardingStore } from '@/stores/onboarding-store'
 import { useAppStore } from '@/stores/app-store'
 import { useBackendEvents } from '@/hooks/use-backend-events'
 import { Button } from '@/components/ui/button'
+import { Progress } from '../ui/progress'
 
 export function Step04Index(): React.JSX.Element {
   const { setIndexingProgress, setIndexingComplete, completeOnboarding } = useOnboardingStore()
-  const folderInfo = useAppStore((s) => s.rootFolder)
+  const rootFolder = useAppStore((s) => s.rootFolder)
+  const folderStats = useAppStore((s) => s.folderStats)
   const indexingProgress = useAppStore((s) => s.indexingProgress)
   const indexingComplete = useAppStore((s) => s.indexingComplete)
   const [isIndexing, setIsIndexing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const { onMessage } = useBackendEvents()
 
-  const totalImages = folderInfo?.imageCount ?? 0
+  const totalImages = folderStats.imageCount
 
   const handleStartIndexing = async () => {
-    if (!folderInfo) return
+    if (!rootFolder) return
     setIsIndexing(true)
     setError(null)
     setIndexingProgress(0)
     setIndexingComplete(false)
 
     try {
-      const result = await window.api.indexing.start(folderInfo.path, totalImages)
+      const result = await window.api.indexing.start(rootFolder.path, totalImages)
       if (!result.ok) {
         setError(result.message ?? 'Failed to start indexing')
         setIsIndexing(false)
@@ -64,9 +66,7 @@ export function Step04Index(): React.JSX.Element {
 
     return (
       <div className="space-y-4">
-        <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-          <div className="h-full bg-primary transition-all" style={{ width: `${percentage}%` }} />
-        </div>
+        <Progress value={percentage} />
         <p className="font-mono text-xs text-muted-foreground">
           {progress.toLocaleString()} / {totalImages.toLocaleString()}
           {indexingComplete ? ' · Done' : ` · ${percentage}%`}

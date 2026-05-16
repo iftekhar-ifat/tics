@@ -7,6 +7,7 @@ import { loadConfig, getDataDir } from './config'
 import { createWindow, setupElectronApp, setupWindowShortcuts } from './window'
 import { setupAutoUpdater, checkForUpdates } from './autoUpdater'
 import { registerIpcHandlers } from './ipcHandlers'
+import { stopWatcher } from './watcher'
 
 loadConfig()
 
@@ -58,37 +59,19 @@ app.on('activate', () => {
   }
 })
 
-// Cleanup on quit
+// Cleanup on quit (stop watcher immediately, wait for backend)
+function cleanup() {
+  stopWatcher()
+  setTimeout(() => stopBackend(), 500)
+}
+
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
-    setTimeout(() => {
-      stopBackend()
-      app.quit()
-    }, 500)
+    cleanup()
+    app.quit()
   }
 })
 
 app.on('before-quit', () => {
-  setTimeout(() => stopBackend(), 500)
-})
-
-// Window activation (macOS)
-app.on('activate', () => {
-  if (getMainWindow() === null) {
-    createWindow()
-  }
-})
-
-// Cleanup on quit
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    setTimeout(() => {
-      stopBackend()
-      app.quit()
-    }, 500)
-  }
-})
-
-app.on('before-quit', () => {
-  setTimeout(() => stopBackend(), 500)
+  cleanup()
 })

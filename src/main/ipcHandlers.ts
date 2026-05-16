@@ -1,5 +1,5 @@
 import { ipcMain, dialog, shell, app } from 'electron'
-import { existsSync, readdirSync, statSync } from 'fs'
+import { existsSync, readdirSync } from 'fs'
 import { join } from 'path'
 import { autoUpdater } from 'electron-updater'
 
@@ -7,6 +7,9 @@ import { callBackend } from './backend'
 import { getDataDir, setDataDir as persistDataDir } from './config'
 import { getMainWindow, getBackendStatus } from './state'
 import { getUpdateState } from './state'
+import { startWatcher, stopWatcher, getWatcherStatus } from './watcher'
+import { scanFolderSync } from './folder-scanner'
+import { startFolderWatcher, stopFolderWatcher } from './folder-watcher'
 
 const IMAGE_EXTENSIONS = [
   '.jpg',
@@ -15,13 +18,14 @@ const IMAGE_EXTENSIONS = [
   '.gif',
   '.bmp',
   '.webp',
+  '.tiff',
+  '.tif',
   '.svg',
   '.ico',
-  '.tiff',
-  '.tif'
+  '.heic',
+  '.heif',
+  '.avif'
 ]
-
-const IMAGE_EXTENSIONS_SET = new Set(IMAGE_EXTENSIONS)
 
 function getAllImages(
   dirPath: string,
@@ -53,39 +57,6 @@ function getAllImages(
   }
 
   return images
-}
-
-function scanFolderSync(dirPath: string): { imageCount: number; totalSize: number } {
-  let imageCount = 0
-  let totalSize = 0
-
-  try {
-    const entries = readdirSync(dirPath, { withFileTypes: true })
-
-    for (const entry of entries) {
-      const fullPath = join(dirPath, entry.name)
-
-      if (entry.isDirectory()) {
-        const sub = scanFolderSync(fullPath)
-        imageCount += sub.imageCount
-        totalSize += sub.totalSize
-      } else if (entry.isFile()) {
-        const ext = entry.name.toLowerCase().slice(entry.name.lastIndexOf('.'))
-        if (IMAGE_EXTENSIONS_SET.has(ext)) {
-          imageCount++
-          try {
-            totalSize += statSync(fullPath).size
-          } catch {
-            // skip unreadable files
-          }
-        }
-      }
-    }
-  } catch (error) {
-    console.error('Error scanning directory:', error)
-  }
-
-  return { imageCount, totalSize }
 }
 
 export function registerIpcHandlers(): void {
@@ -211,14 +182,21 @@ export function registerIpcHandlers(): void {
   })
 
   // Indexing
-  ipcMain.handle('indexing:start', async (_event, rootPath: string, totalImages: number) => {
-    try {
-      const result = await callBackend('indexing.start', { path: rootPath, totalImages })
-      return { ok: true, data: result }
-    } catch (error) {
-      return { ok: false, message: String(error) }
+  ipcMain.handle(
+    'indexing:start',
+    async (_event, rootPath: string, totalImages: number, indexedSoFar: number = 0) => {
+      try {
+        const result = await callBackend('indexing.start', {
+          path: rootPath,
+          totalImages,
+          indexed_so_far: indexedSoFar
+        })
+        return { ok: true, data: result }
+      } catch (error) {
+        return { ok: false, message: String(error) }
+      }
     }
-  })
+  )
 
   ipcMain.handle('indexing:get-status', async () => {
     try {
@@ -245,6 +223,25 @@ export function registerIpcHandlers(): void {
     } catch (error) {
       return { ok: false, message: String(error) }
     }
+  })
+
+  // Watcher
+  ipcMain.handle('watcher:start', async (_event, rootPath: string) => {
+    const mainWin = getMainWindow()
+    if (mainWin && rootPath) {
+      startWatcher(mainWin, rootPath)
+      return { ok: true }
+    }
+    return { ok: false, message: 'No window or path' }
+  })
+
+  ipcMain.handle('watcher:stop', async () => {
+    stopWatcher()
+    return { ok: true }
+  })
+
+  ipcMain.handle('watcher:get-status', async () => {
+    return getWatcherStatus()
   })
 
   // Updater
@@ -278,4 +275,16 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('backend:get-status', () => ({
     status: getBackendStatus()
   }))
+
+  // Folder watcher (pure Electron IPC)
+  ipcMain.handle('folder-watcher:start', async (_event, rootPath: string) => {
+    if (!rootPath) return { ok: false, message: 'No path provided' }
+    const ok = startFolderWatcher(rootPath)
+    return ok ? { ok: true } : { ok: false, message: 'Failed to start' }
+  })
+
+  ipcMain.handle('folder-watcher:stop', async () => {
+    stopFolderWatcher()
+    return { ok: true }
+  })
 }

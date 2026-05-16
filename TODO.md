@@ -14,6 +14,7 @@
 - [x] Settings indexing panel wired to real backend calls
 
 ### Remaining
+
 - [ ] Actual FAISS embedding + search (still mocked)
 - [ ] File watcher for new images
 - [ ] Search UI (text/image-text)

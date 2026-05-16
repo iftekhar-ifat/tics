@@ -38,18 +38,21 @@ def _count_images(root_path: str) -> int:
     return count
 
 
-def _create_tics_folder(root_path: str, total_images: int) -> Path:
-    """Create .tics directory with placeholder files inside root_path."""
-    tics_dir = Path(root_path) / ".tics"
-    tics_dir.mkdir(parents=True, exist_ok=True)
-
+def _update_tics_config(tics_dir: Path, total_images: int, indexed: int):
+    """Write or update .tics/config.json."""
     config = {
         "totalImages": total_images,
         "indexedAt": None,
-        "indexed": 0,
+        "indexed": indexed,
     }
     with open(tics_dir / "config.json", "w") as f:
         json.dump(config, f, indent=2)
+
+
+def _ensure_tics_folder(root_path: str) -> Path:
+    """Create .tics directory with placeholder files if they don't exist."""
+    tics_dir = Path(root_path) / ".tics"
+    tics_dir.mkdir(parents=True, exist_ok=True)
 
     for name in ["index.faiss", "index.pkl"]:
         placeholder = tics_dir / name
@@ -63,21 +66,23 @@ def _create_tics_folder(root_path: str, total_images: int) -> Path:
     return tics_dir
 
 
-def _simulate_indexing(push_event, root_path: str, total_images: int):
+def _simulate_indexing(push_event, root_path: str, total_images: int, offset: int = 0):
     """Simulate FAISS indexing with real progress tracking."""
     global _indexing_state
 
-    tics_dir = _create_tics_folder(root_path, total_images)
+    tics_dir = _ensure_tics_folder(root_path)
+    _update_tics_config(tics_dir, total_images, offset)
+
     _indexing_state = {
         "state": "running",
-        "indexed": 0,
+        "indexed": offset,
         "total": total_images,
         "root_path": root_path,
     }
 
     push_event({
         "type": "indexing_progress",
-        "indexed": 0,
+        "indexed": offset,
         "total": total_images,
         "imgsPerSec": 0,
     })
@@ -85,7 +90,7 @@ def _simulate_indexing(push_event, root_path: str, total_images: int):
     sim_speed = 50  # simulated images per second
     last_push = time.time()
 
-    for i in range(1, total_images + 1):
+    for i in range(offset + 1, total_images + 1):
         if _indexing_cancel_event and _indexing_cancel_event.is_set():
             _indexing_state["state"] = "idle"
             push_event({"type": "indexing_error", "error": "Cancelled"})
@@ -125,8 +130,12 @@ def _simulate_indexing(push_event, root_path: str, total_images: int):
     })
 
 
-def start_indexing(push_event, root_path: str, total_images: int = 0) -> dict:
+def start_indexing(push_event, root_path: str, total_images: int = 0, indexed_so_far: int = 0) -> dict:
     """Start indexing in a background thread.
+
+    When indexed_so_far > 0, preserves existing .tics/ folder and
+    simulates only the remaining images (incremental/index-new mode).
+    Otherwise (indexed_so_far == 0) clears .tics/ first for a full re-index.
 
     Returns dict with status and totalImages count.
     """
@@ -137,6 +146,10 @@ def start_indexing(push_event, root_path: str, total_images: int = 0) -> dict:
 
     # Cancel any existing indexing
     cancel_indexing()
+
+    # Full re-index: remove old .tics/ before starting fresh
+    if indexed_so_far == 0:
+        clear_index(root_path)
 
     # If no totalImages passed, scan the folder
     if total_images <= 0:
@@ -151,9 +164,10 @@ def start_indexing(push_event, root_path: str, total_images: int = 0) -> dict:
 
     _indexing_cancel_event = ThreadEvent()
     _indexing_state["state"] = "starting"
+    _indexing_state["indexed"] = indexed_so_far
 
     def run():
-        _simulate_indexing(push_event, root_path, total_images)
+        _simulate_indexing(push_event, root_path, total_images, indexed_so_far)
 
     _indexing_thread = threading.Thread(target=run, daemon=True)
     _indexing_thread.start()

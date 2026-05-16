@@ -82,10 +82,23 @@ declare global {
           message?: string
         }>
       }
+      watcher: {
+        start: (rootPath: string) => Promise<{ ok: boolean; message?: string }>
+        stop: () => Promise<{ ok: boolean }>
+        getStatus: () => Promise<{ watching: boolean; rootPath: string }>
+      }
+      folderWatcher: {
+        start: (rootPath: string) => Promise<{ ok: boolean; message?: string }>
+        stop: () => Promise<{ ok: boolean }>
+        onUpdate: (
+          callback: (data: { imageCount: number; totalSize: number }) => void
+        ) => () => void
+      }
       indexing: {
         start: (
           rootPath: string,
-          totalImages: number
+          totalImages: number,
+          indexedSoFar?: number
         ) => Promise<{
           ok: boolean
           data?: { status: string }

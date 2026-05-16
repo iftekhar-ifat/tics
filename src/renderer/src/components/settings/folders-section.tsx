@@ -165,13 +165,7 @@ export function FoldersSection(): React.JSX.Element {
     if (result && !result.canceled && result.filePaths.length > 0) {
       const path = result.filePaths[0]
       const name = path.split(/[\\/]/).pop() || path
-      const scanResult = await window.api.folder.scanFolder(path)
-      setRootFolder({
-        path,
-        name,
-        imageCount: scanResult.imageCount,
-        totalSize: scanResult.totalSize
-      })
+      setRootFolder({ path, name })
     }
   }
 

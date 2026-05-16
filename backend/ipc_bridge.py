@@ -100,13 +100,14 @@ async def handle_request(request):
     async def handle_indexing_start(p):
         root_path = p.get("path", "")
         total_images = p.get("totalImages", 0)
+        indexed_so_far = p.get("indexed_so_far", 0)
 
         def _on_indexing_event(event: dict):
             event_type = event.get("type", "unknown")
             event_data = {k: v for k, v in event.items() if k != "type"}
             push_event(event_type, event_data)
 
-        result = start_indexing(_on_indexing_event, root_path, total_images)
+        result = start_indexing(_on_indexing_event, root_path, total_images, indexed_so_far)
         return result
 
     async def handle_indexing_get_status(_p):

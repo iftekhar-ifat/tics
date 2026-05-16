@@ -4,8 +4,6 @@ import { useAppStore } from './app-store'
 export interface FolderInfo {
   path: string
   name: string
-  imageCount: number
-  totalSize: number
 }
 
 export type InferenceDevice = 'mps' | 'cuda' | 'cpu'

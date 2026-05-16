@@ -5,6 +5,9 @@ import type { HardwareInfo, ModelStatus } from './onboarding-store'
 interface RootFolder {
   path: string
   name: string
+}
+
+interface FolderStats {
   imageCount: number
   totalSize: number
 }
@@ -19,6 +22,7 @@ interface AppState {
   onboardingComplete: boolean
   currentStep: number
   rootFolder: RootFolder | null
+  folderStats: FolderStats
   modelFolder: ModelFolder | null
   hardwareInfo: HardwareInfo | null
   hardwareCheckComplete: boolean
@@ -30,6 +34,7 @@ interface AppState {
 
   // App runtime state
   appReady: boolean
+  newImagesCount: number
 
   // Actions
   setOnboardingComplete: (complete: boolean) => void
@@ -37,6 +42,7 @@ interface AppState {
   nextStep: () => void
   prevStep: () => void
   setRootFolder: (info: RootFolder | null) => void
+  setFolderStats: (stats: FolderStats) => void
   setModelFolder: (info: ModelFolder | null) => void
   setHardwareInfo: (info: HardwareInfo | null) => void
   setHardwareCheckComplete: (complete: boolean) => void
@@ -46,6 +52,7 @@ interface AppState {
   setIndexingComplete: (complete: boolean) => void
   setSelectedModel: (model: string) => void
   setAppReady: (ready: boolean) => void
+  setNewImagesCount: (count: number) => void
   resetOnboarding: () => void
 }
 
@@ -56,6 +63,7 @@ export const useAppStore = create<AppState>()(
       onboardingComplete: false,
       currentStep: 1,
       rootFolder: null,
+      folderStats: { imageCount: 0, totalSize: 0 },
       modelFolder: null,
       hardwareInfo: null,
       hardwareCheckComplete: false,
@@ -67,6 +75,7 @@ export const useAppStore = create<AppState>()(
 
       // App runtime state
       appReady: false,
+      newImagesCount: 0,
 
       // Actions
       setOnboardingComplete: (complete) => set({ onboardingComplete: complete }),
@@ -74,6 +83,7 @@ export const useAppStore = create<AppState>()(
       nextStep: () => set((state) => ({ currentStep: Math.min(state.currentStep + 1, 4) })),
       prevStep: () => set((state) => ({ currentStep: Math.max(state.currentStep - 1, 1) })),
       setRootFolder: (info) => set({ rootFolder: info }),
+      setFolderStats: (stats) => set({ folderStats: stats }),
       setModelFolder: (info) => set({ modelFolder: info }),
       setHardwareInfo: (info) => set({ hardwareInfo: info }),
       setHardwareCheckComplete: (complete) => set({ hardwareCheckComplete: complete }),
@@ -83,6 +93,7 @@ export const useAppStore = create<AppState>()(
       setIndexingComplete: (complete) => set({ indexingComplete: complete }),
       setSelectedModel: (model) => set({ selectedModel: model }),
       setAppReady: (ready) => set({ appReady: ready }),
+      setNewImagesCount: (count) => set({ newImagesCount: count }),
       resetOnboarding: () =>
         set({
           onboardingComplete: false,
@@ -103,7 +114,9 @@ export const useAppStore = create<AppState>()(
       partialize: (state) => ({
         onboardingComplete: state.onboardingComplete,
         currentStep: state.currentStep,
-        rootFolder: state.rootFolder,
+        rootFolder: state.rootFolder
+          ? { path: state.rootFolder.path, name: state.rootFolder.name }
+          : null,
         modelFolder: state.modelFolder,
         hardwareInfo: state.hardwareInfo,
         hardwareCheckComplete: state.hardwareCheckComplete,
