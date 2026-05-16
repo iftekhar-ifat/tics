@@ -124,7 +124,8 @@ export const useAppStore = create<AppState>()(
         modelStatus: state.modelStatus,
         downloadProgress: state.downloadProgress,
         indexingProgress: state.indexingProgress,
-        indexingComplete: state.indexingComplete
+        indexingComplete: state.indexingComplete,
+        indexedBaseline: state.indexedBaseline
       })
     }
   )

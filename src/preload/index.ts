@@ -136,8 +136,8 @@ const api = {
         data?: { status: string }
         message?: string
       }>,
-    getStatus: () =>
-      ipcRenderer.invoke('indexing:get-status') as Promise<{
+    getStatus: (rootPath?: string) =>
+      ipcRenderer.invoke('indexing:get-status', rootPath) as Promise<{
         ok: boolean
         data?: {
           state: 'idle' | 'running' | 'paused' | 'complete'

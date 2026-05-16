@@ -197,9 +197,9 @@ export function registerIpcHandlers(): void {
     }
   )
 
-  ipcMain.handle('indexing:get-status', async () => {
+  ipcMain.handle('indexing:get-status', async (_event, rootPath?: string) => {
     try {
-      const result = await callBackend('indexing.getStatus')
+      const result = await callBackend('indexing.getStatus', { path: rootPath })
       return { ok: true, data: result }
     } catch (error) {
       return { ok: false, message: String(error) }

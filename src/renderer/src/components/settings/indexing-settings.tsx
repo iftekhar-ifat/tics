@@ -134,18 +134,20 @@ export function IndexingSettings() {
     return unsub
   }, [onMessage, setIndexedBaseline])
 
-  // Get initial state from backend on mount
+  // Restore state from backend — refresh when root folder changes
   useEffect(() => {
-    window.api.indexing.getStatus().then((result) => {
+    if (!rootFolder?.path) return
+    window.api.indexing.getStatus(rootFolder.path).then((result) => {
       if (result.ok && result.data) {
         setStatus((prev) => ({
           ...prev,
           state: result.data!.state,
           indexed: result.data!.indexed
         }))
+        setIndexedBaseline(result.data.indexed)
       }
     })
-  }, [])
+  }, [rootFolder?.path, setIndexedBaseline])
 
   const handleStart = async () => {
     if (!rootFolder) return

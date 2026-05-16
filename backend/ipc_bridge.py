@@ -110,8 +110,8 @@ async def handle_request(request):
         result = start_indexing(_on_indexing_event, root_path, total_images, indexed_so_far)
         return result
 
-    async def handle_indexing_get_status(_p):
-        return get_indexing_status()
+    async def handle_indexing_get_status(p):
+        return get_indexing_status(p.get("path", ""))
 
     async def handle_indexing_cancel(_p):
         cancel_indexing()

@@ -90,7 +90,7 @@ interface Window {
         data?: { status: string }
         message?: string
       }>
-      getStatus: () => Promise<{
+      getStatus: (rootPath?: string) => Promise<{
         ok: boolean
         data?: {
           state: 'idle' | 'running' | 'paused' | 'complete'

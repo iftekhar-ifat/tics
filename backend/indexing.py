@@ -20,11 +20,12 @@ def _read_config(tics_dir: Path) -> dict:
 
 
 def _write_config(tics_dir: Path, indexed: int, root_path: str = ""):
-    config = {"indexed": indexed}
     if root_path:
         config["rootPath"] = root_path
     with open(tics_dir / "config.json", "w") as f:
         json.dump(config, f, indent=2)
+
+    config = {"indexed": indexed}
 
 
 def _ensure_tics_folder(root_path: str) -> Path:
