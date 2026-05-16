@@ -19,13 +19,13 @@ def _read_config(tics_dir: Path) -> dict:
         return {"indexed": 0}
 
 
-def _write_config(tics_dir: Path, indexed: int, root_path: str = ""):
+def _write_config(tics_dir: Path, indexed: int, root_path: str = "", total_images: int = 0):
+    config = {"indexed": indexed, "totalImages": total_images}
     if root_path:
         config["rootPath"] = root_path
+    tics_dir.mkdir(parents=True, exist_ok=True)
     with open(tics_dir / "config.json", "w") as f:
         json.dump(config, f, indent=2)
-
-    config = {"indexed": indexed}
 
 
 def _ensure_tics_folder(root_path: str) -> Path:
@@ -54,7 +54,7 @@ def _process_single_image(image_index: int, tics_dir: Path):
 
 def _simulate_indexing(push_event, root_path: str, total_images: int, offset: int = 0):
     tics_dir = _ensure_tics_folder(root_path)
-    _write_config(tics_dir, offset, root_path)
+    _write_config(tics_dir, offset, root_path, total_images)
 
     push_event(
         {
@@ -73,7 +73,7 @@ def _simulate_indexing(push_event, root_path: str, total_images: int, offset: in
             return
 
         _process_single_image(i, tics_dir)
-        _write_config(tics_dir, i, root_path)
+        _write_config(tics_dir, i, root_path, total_images)
 
         now = time.time()
         if now - last_push >= 0.2 or i == total_images:
@@ -128,16 +128,19 @@ def start_indexing(
 
 
 def get_indexing_status(root_path: str = "") -> dict:
-    global _root_path
+    global _root_path, _indexing_thread
     rp = root_path or _root_path
     if not rp:
         return {"indexed": 0, "state": "idle"}
+    is_running = _indexing_thread is not None and _indexing_thread.is_alive()
+    if is_running:
+        return {"indexed": 0, "state": "running"}
     try:
         cfg = _read_config(Path(rp) / ".tics")
-        return {
-            "indexed": cfg.get("indexed", 0),
-            "state": "complete",
-        }
+        indexed = cfg.get("indexed", 0)
+        total = cfg.get("totalImages", 0)
+        state = "complete" if total > 0 and indexed >= total else "idle"
+        return {"indexed": indexed, "state": state}
     except Exception:
         return {"indexed": 0, "state": "idle"}
 

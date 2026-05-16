@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import {
   ImagesIcon,
   PlayIcon,
@@ -6,7 +6,6 @@ import {
   ArrowCounterClockwiseIcon,
   CheckCircleIcon,
   CircleDashedIcon,
-  PlusCircleIcon,
   FileImageIcon
 } from '@phosphor-icons/react'
 import { useAppStore } from '@/stores/app-store'
@@ -34,40 +33,28 @@ function StatRow({ label, value }: { label: string; value: string }) {
   )
 }
 
-function StateBadge({ state, newImages }: { state: IndexingState; newImages: number }) {
+function StateBadge({ state }: { state: IndexingState }) {
   const isRunning = state === 'running'
   const isComplete = state === 'complete'
   const isPaused = state === 'paused'
-  const hasNew = isComplete && newImages > 0
 
-  const className = hasNew
-    ? 'bg-violet-500/15 text-violet-500 hover:bg-violet-500/20 border-transparent'
-    : isComplete
-      ? 'bg-green-500/15 text-green-500 hover:bg-green-500/20 border-transparent'
-      : isRunning
-        ? 'bg-cyan-500/15 text-cyan-500 hover:bg-cyan-500/20 border-transparent'
-        : isPaused
-          ? 'bg-amber-500/15 text-amber-500 hover:bg-amber-500/20 border-transparent'
-          : 'border-transparent'
+  const className = isComplete
+    ? 'bg-green-500/15 text-green-500 hover:bg-green-500/20 border-transparent'
+    : isRunning
+      ? 'bg-cyan-500/15 text-cyan-500 hover:bg-cyan-500/20 border-transparent'
+      : isPaused
+        ? 'bg-amber-500/15 text-amber-500 hover:bg-amber-500/20 border-transparent'
+        : 'border-transparent'
 
-  const label = hasNew
-    ? 'New'
-    : state === 'idle'
-      ? 'Idle'
-      : state === 'paused'
-        ? 'Paused'
-        : isComplete
-          ? 'Done'
-          : 'Running'
+  const label =
+    state === 'idle' ? 'Idle' : state === 'paused' ? 'Paused' : isComplete ? 'Done' : 'Running'
 
   return (
     <Badge
       variant="secondary"
       className={`gap-1 px-1.5 py-0.5 font-mono text-xs uppercase tracking-wider ${className}`}
     >
-      {hasNew ? (
-        <PlusCircleIcon size={12} weight="bold" />
-      ) : isComplete ? (
+      {isComplete ? (
         <CheckCircleIcon size={12} weight="fill" />
       ) : isRunning ? (
         <span className="relative flex h-1.5 w-1.5">
@@ -85,8 +72,6 @@ function StateBadge({ state, newImages }: { state: IndexingState; newImages: num
 export function IndexingSettings() {
   const rootFolder = useAppStore((s) => s.rootFolder)
   const folderStats = useAppStore((s) => s.folderStats)
-  const indexedBaseline = useAppStore((s) => s.indexedBaseline)
-  const setIndexedBaseline = useAppStore((s) => s.setIndexedBaseline)
   const { onMessage } = useBackendEvents()
 
   const [status, setStatus] = useState<IndexingStatus>({
@@ -94,12 +79,6 @@ export function IndexingSettings() {
     imgsPerSec: 0,
     state: 'idle'
   })
-
-  // Ref for folderStats.imageCount to avoid re-subscribing on every update
-  const folderImageCountRef = useRef(folderStats.imageCount)
-  useEffect(() => {
-    folderImageCountRef.current = folderStats.imageCount
-  }, [folderStats.imageCount])
 
   // Subscribe to backend indexing events (stable subscription)
   useEffect(() => {
@@ -120,7 +99,6 @@ export function IndexingSettings() {
           state: 'running'
         }))
       } else if (event.type === 'indexing_complete') {
-        setIndexedBaseline(folderImageCountRef.current)
         setStatus((prev) => ({
           ...prev,
           indexed: event.data.indexed ?? prev.indexed,
@@ -132,9 +110,9 @@ export function IndexingSettings() {
       }
     })
     return unsub
-  }, [onMessage, setIndexedBaseline])
+  }, [onMessage])
 
-  // Restore state from backend — refresh when root folder changes
+  // Restore state from backend on mount or when root folder changes
   useEffect(() => {
     if (!rootFolder?.path) return
     window.api.indexing.getStatus(rootFolder.path).then((result) => {
@@ -144,15 +122,15 @@ export function IndexingSettings() {
           state: result.data!.state,
           indexed: result.data!.indexed
         }))
-        setIndexedBaseline(result.data.indexed)
       }
     })
-  }, [rootFolder?.path, setIndexedBaseline])
+  }, [rootFolder?.path])
 
   const handleStart = async () => {
     if (!rootFolder) return
-    setStatus((prev) => ({ ...prev, indexed: 0, state: 'running' }))
-    const result = await window.api.indexing.start(rootFolder.path, folderStats.imageCount)
+    const offset = status.indexed
+    setStatus((prev) => ({ ...prev, state: 'running' }))
+    const result = await window.api.indexing.start(rootFolder.path, folderStats.imageCount, offset)
     if (!result.ok) {
       setStatus((prev) => ({ ...prev, state: 'idle' }))
     }
@@ -166,7 +144,6 @@ export function IndexingSettings() {
   const handleReindex = async () => {
     if (!rootFolder) return
     await window.api.indexing.clear(rootFolder.path)
-    setIndexedBaseline(0)
     setStatus({
       indexed: 0,
       state: 'idle',
@@ -174,32 +151,15 @@ export function IndexingSettings() {
     })
   }
 
-  const handleIndexNew = async () => {
-    if (!rootFolder) return
-    setStatus((prev) => ({
-      ...prev,
-      indexed: indexedBaseline,
-      state: 'running'
-    }))
-    const result = await window.api.indexing.start(
-      rootFolder.path,
-      folderStats.imageCount,
-      indexedBaseline
-    )
-    if (!result.ok) {
-      setStatus((prev) => ({ ...prev, state: 'idle' }))
-    }
-  }
-
-  const { indexed, state } = status
-  const newImages = Math.max(0, folderStats.imageCount - indexedBaseline)
+  const { indexed, state: rawState } = status
   const displayTotal = folderStats.imageCount || 0
   const safeIndexed = Math.min(indexed, displayTotal)
   const remaining = displayTotal - safeIndexed
   const pct = displayTotal > 0 ? Math.round((safeIndexed / displayTotal) * 100) : 0
-  const isRunning = state === 'running'
-  const isComplete = state === 'complete'
-  const hasNew = isComplete && newImages > 0
+  const isRunning = rawState === 'running'
+  const effectiveComplete = rawState === 'complete' && safeIndexed >= displayTotal
+  const showReindex = !isRunning && safeIndexed >= displayTotal
+  const effectiveState = effectiveComplete ? 'complete' : isRunning ? 'running' : 'idle'
 
   return (
     <Card size="sm">
@@ -215,7 +175,7 @@ export function IndexingSettings() {
               <ImagesIcon size={20} className="shrink-0 text-sidebar-foreground" />
               <span className="font-mono text-primary text-sm">Index Status</span>
             </div>
-            <StateBadge state={state} newImages={newImages} />
+            <StateBadge state={effectiveState} />
           </div>
 
           <Progress value={pct} className="h-1.5" />
@@ -227,55 +187,35 @@ export function IndexingSettings() {
             />
             <StatRow label="Remaining" value={remaining > 0 ? remaining.toLocaleString() : '—'} />
             <StatRow label="Progress" value={`${pct}%`} />
-            {hasNew && <StatRow label="New images" value={`+${newImages.toLocaleString()}`} />}
           </div>
 
           <Separator />
 
-          {!isComplete && (
+          {isRunning ? (
             <Button
-              variant={isRunning ? 'destructive' : 'default'}
+              variant="destructive"
               size="sm"
               className="w-full h-7 text-xs"
-              onClick={isRunning ? handleStop : handleStart}
+              onClick={handleStop}
             >
-              {isRunning ? (
-                <>
-                  <StopIcon size={12} weight="fill" />
-                  Stop
-                </>
-              ) : (
-                <>
-                  <PlayIcon size={12} weight="fill" />
-                  {state === 'paused' ? 'Resume' : 'Start'}
-                </>
-              )}
+              <StopIcon size={12} weight="fill" />
+              Stop
             </Button>
-          )}
-
-          {isComplete && (
-            <div className="flex flex-col gap-1.5">
-              {hasNew && (
-                <Button
-                  variant="default"
-                  size="sm"
-                  className="w-full text-xs"
-                  onClick={handleIndexNew}
-                >
-                  <PlusCircleIcon size={12} />
-                  Index New ({newImages})
-                </Button>
-              )}
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full text-xs"
-                onClick={handleReindex}
-              >
-                <ArrowCounterClockwiseIcon size={12} />
-                Re-index All
-              </Button>
-            </div>
+          ) : showReindex ? (
+            <Button variant="outline" size="sm" className="w-full text-xs" onClick={handleReindex}>
+              <ArrowCounterClockwiseIcon size={12} />
+              Re-index All
+            </Button>
+          ) : (
+            <Button
+              variant="default"
+              size="sm"
+              className="w-full h-7 text-xs"
+              onClick={handleStart}
+            >
+              <PlayIcon size={12} weight="fill" />
+              {effectiveComplete ? 'Index New' : 'Start'}
+            </Button>
           )}
         </div>
       </CardContent>
