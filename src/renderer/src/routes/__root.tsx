@@ -3,6 +3,7 @@ import { useAppStore } from '@/stores/app-store'
 import { Onboarding } from '@/components/onboarding/onboarding'
 import { SplashScreen } from '@/components/splash-screen'
 import { BackendEventsProvider } from '@/hooks/use-backend-events'
+import { useFolderWatcher } from '@/hooks/use-folder-watcher'
 import { SidebarProvider, Sidebar, SidebarInset } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/app-sidebar'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable'
@@ -13,6 +14,7 @@ export const Route = createRootRoute({
 
 function RootLayout(): React.JSX.Element {
   const { appReady, onboardingComplete } = useAppStore()
+  useFolderWatcher()
 
   if (!appReady) {
     return <SplashScreen />

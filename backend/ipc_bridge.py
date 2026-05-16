@@ -120,7 +120,6 @@ async def handle_request(request):
     async def handle_index_clear(p):
         root_path = p.get("path", "")
         if root_path:
-            cancel_indexing()
             clear_index(root_path)
             return {"status": "cleared"}
         return {"status": "error", "error": "No root path provided"}

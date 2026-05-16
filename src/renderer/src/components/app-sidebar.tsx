@@ -50,7 +50,6 @@ export function AppSidebar({ className }: AppSidebarProps): React.JSX.Element {
       const path = result.filePaths[0]
       const name = path.split(/[/\\]/).pop() || path
       setRootFolder({ path, name })
-      await window.api.watcher.start(path)
     }
   }
 

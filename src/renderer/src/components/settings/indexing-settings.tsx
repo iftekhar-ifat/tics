@@ -24,7 +24,6 @@ interface IndexingStatus {
   total: number
   imgsPerSec: number
   state: IndexingState
-  newImages: number
 }
 
 function StatRow({ label, value }: { label: string; value: string }) {
@@ -87,29 +86,24 @@ function StateBadge({ state, newImages }: { state: IndexingState; newImages: num
 export function IndexingSettings() {
   const rootFolder = useAppStore((s) => s.rootFolder)
   const folderStats = useAppStore((s) => s.folderStats)
-  const setFolderStats = useAppStore((s) => s.setFolderStats)
-  const setNewImagesCount = useAppStore((s) => s.setNewImagesCount)
+  const indexedBaseline = useAppStore((s) => s.indexedBaseline)
+  const setIndexedBaseline = useAppStore((s) => s.setIndexedBaseline)
   const { onMessage } = useBackendEvents()
 
   const [status, setStatus] = useState<IndexingStatus>({
     indexed: 0,
     total: folderStats.imageCount,
     imgsPerSec: 0,
-    state: 'idle',
-    newImages: 0
+    state: 'idle'
   })
 
-  // Refs to avoid tearing down / recreating the event subscription
-  const statusRef = useRef(status)
-  const folderStatsRef = useRef(folderStats)
+  // Ref for folderStats.imageCount to avoid re-subscribing on every update
+  const folderImageCountRef = useRef(folderStats.imageCount)
   useEffect(() => {
-    statusRef.current = status
-  }, [status])
-  useEffect(() => {
-    folderStatsRef.current = folderStats
-  }, [folderStats])
+    folderImageCountRef.current = folderStats.imageCount
+  }, [folderStats.imageCount])
 
-  // Subscribe to backend indexing events + watcher events (stable subscription)
+  // Subscribe to backend indexing events (stable subscription)
   useEffect(() => {
     const unsub = onMessage((data: unknown) => {
       const event = data as {
@@ -118,12 +112,8 @@ export function IndexingSettings() {
           indexed?: number
           total?: number
           imgsPerSec?: number
-          imageCount?: number
-          totalSize?: number
         }
       }
-      const curStats = folderStatsRef.current
-      const curStatus = statusRef.current
 
       if (event.type === 'indexing_progress') {
         setStatus((prev) => ({
@@ -134,7 +124,7 @@ export function IndexingSettings() {
           state: 'running'
         }))
       } else if (event.type === 'indexing_complete') {
-        setNewImagesCount(0)
+        setIndexedBaseline(folderImageCountRef.current)
         setStatus((prev) => ({
           ...prev,
           indexed: event.data.indexed ?? prev.total,
@@ -143,37 +133,10 @@ export function IndexingSettings() {
         }))
       } else if (event.type === 'indexing_error') {
         setStatus((prev) => ({ ...prev, state: 'idle', imgsPerSec: 0 }))
-      } else if (event.type === 'watcher.filesChanged') {
-        const newCount = event.data.imageCount ?? 0
-        const newSize = event.data.totalSize ?? 0
-        if (rootFolder) {
-          const delta = Math.max(
-            0,
-            newCount - (curStatus.indexed > 0 ? curStatus.indexed : curStats.imageCount)
-          )
-          setFolderStats({ imageCount: newCount, totalSize: newSize })
-          if (curStatus.state === 'complete') {
-            setNewImagesCount(delta)
-            setStatus((prev) => ({
-              ...prev,
-              newImages: prev.newImages + delta,
-              total: Math.max(prev.total, newCount)
-            }))
-          } else {
-            setStatus((prev) => ({ ...prev, total: Math.max(prev.total, newCount) }))
-          }
-        }
       }
     })
     return unsub
-  }, [onMessage, rootFolder, setFolderStats, setNewImagesCount])
-
-  // Start file watcher on mount if root folder is set
-  useEffect(() => {
-    if (rootFolder?.path) {
-      window.api.watcher.start(rootFolder.path)
-    }
-  }, [rootFolder?.path])
+  }, [onMessage, setIndexedBaseline])
 
   // Get initial state from backend on mount
   useEffect(() => {
@@ -206,36 +169,33 @@ export function IndexingSettings() {
   const handleReindex = async () => {
     if (!rootFolder) return
     await window.api.indexing.clear(rootFolder.path)
-    setNewImagesCount(0)
+    setIndexedBaseline(0)
     setStatus({
       indexed: 0,
       total: folderStats.imageCount,
       state: 'idle',
-      imgsPerSec: 0,
-      newImages: 0
+      imgsPerSec: 0
     })
   }
 
   const handleIndexNew = async () => {
     if (!rootFolder) return
-    const indexedSoFar = status.indexed
     const newTotal = folderStats.imageCount
     setStatus((prev) => ({
       ...prev,
-      indexed: indexedSoFar,
+      indexed: indexedBaseline,
       total: newTotal,
-      state: 'running',
-      newImages: 0
+      state: 'running'
     }))
-    setNewImagesCount(0)
-    const result = await window.api.indexing.start(rootFolder.path, newTotal, indexedSoFar)
+    const result = await window.api.indexing.start(rootFolder.path, newTotal, indexedBaseline)
     if (!result.ok) {
       setStatus((prev) => ({ ...prev, state: 'idle' }))
     }
   }
 
-  const { indexed, total, state, newImages } = status
-  const displayTotal = total || folderStats.imageCount || 0
+  const { indexed, total, state } = status
+  const newImages = Math.max(0, folderStats.imageCount - indexedBaseline)
+  const displayTotal = folderStats.imageCount || total || 0
   const remaining = displayTotal - indexed
   const pct = displayTotal > 0 ? Math.round((indexed / displayTotal) * 100) : 0
   const isRunning = state === 'running'

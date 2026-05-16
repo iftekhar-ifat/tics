@@ -1,4 +1,3 @@
-import { useEffect } from 'react'
 import {
   FolderOpenIcon,
   SwapIcon,
@@ -28,22 +27,6 @@ export default function FolderSettings() {
       setFolderStats({ imageCount: scanResult.imageCount, totalSize: scanResult.totalSize })
     }
   }
-
-  // Watch the current root folder for file changes and update stats in real time
-  useEffect(() => {
-    if (!rootFolder?.path) return
-
-    window.api.folderWatcher.start(rootFolder.path)
-
-    const unsub = window.api.folderWatcher.onUpdate((data) => {
-      setFolderStats({ imageCount: data.imageCount, totalSize: data.totalSize })
-    })
-
-    return () => {
-      unsub()
-      window.api.folderWatcher.stop()
-    }
-  }, [rootFolder?.path, setFolderStats])
 
   return (
     <Card size="sm">

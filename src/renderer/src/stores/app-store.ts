@@ -34,7 +34,7 @@ interface AppState {
 
   // App runtime state
   appReady: boolean
-  newImagesCount: number
+  indexedBaseline: number
 
   // Actions
   setOnboardingComplete: (complete: boolean) => void
@@ -43,6 +43,7 @@ interface AppState {
   prevStep: () => void
   setRootFolder: (info: RootFolder | null) => void
   setFolderStats: (stats: FolderStats) => void
+  setIndexedBaseline: (count: number) => void
   setModelFolder: (info: ModelFolder | null) => void
   setHardwareInfo: (info: HardwareInfo | null) => void
   setHardwareCheckComplete: (complete: boolean) => void
@@ -52,7 +53,6 @@ interface AppState {
   setIndexingComplete: (complete: boolean) => void
   setSelectedModel: (model: string) => void
   setAppReady: (ready: boolean) => void
-  setNewImagesCount: (count: number) => void
   resetOnboarding: () => void
 }
 
@@ -75,7 +75,7 @@ export const useAppStore = create<AppState>()(
 
       // App runtime state
       appReady: false,
-      newImagesCount: 0,
+      indexedBaseline: 0,
 
       // Actions
       setOnboardingComplete: (complete) => set({ onboardingComplete: complete }),
@@ -84,6 +84,7 @@ export const useAppStore = create<AppState>()(
       prevStep: () => set((state) => ({ currentStep: Math.max(state.currentStep - 1, 1) })),
       setRootFolder: (info) => set({ rootFolder: info }),
       setFolderStats: (stats) => set({ folderStats: stats }),
+      setIndexedBaseline: (count) => set({ indexedBaseline: count }),
       setModelFolder: (info) => set({ modelFolder: info }),
       setHardwareInfo: (info) => set({ hardwareInfo: info }),
       setHardwareCheckComplete: (complete) => set({ hardwareCheckComplete: complete }),
@@ -93,7 +94,6 @@ export const useAppStore = create<AppState>()(
       setIndexingComplete: (complete) => set({ indexingComplete: complete }),
       setSelectedModel: (model) => set({ selectedModel: model }),
       setAppReady: (ready) => set({ appReady: ready }),
-      setNewImagesCount: (count) => set({ newImagesCount: count }),
       resetOnboarding: () =>
         set({
           onboardingComplete: false,

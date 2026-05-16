@@ -1,4 +1,3 @@
-import os
 import json
 import time
 import shutil
@@ -9,40 +8,22 @@ from threading import Event as ThreadEvent
 # Module-level state
 _indexing_thread: threading.Thread | None = None
 _indexing_cancel_event: ThreadEvent | None = None
-_indexing_state: dict = {
-    "state": "idle",
-    "indexed": 0,
-    "total": 0,
-    "root_path": "",
-}
-
-IMAGE_EXTENSIONS = {
-    ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp",
-    ".tiff", ".tif", ".svg", ".ico", ".heic", ".heif", ".avif",
-}
+_root_path: str = ""
 
 
-def _count_images(root_path: str) -> int:
-    """Count image files recursively in a directory."""
-    count = 0
+def _read_config(tics_dir: Path) -> dict:
+    """Read config.json, return defaults if missing."""
     try:
-        for entry in os.scandir(root_path):
-            if entry.is_dir(follow_symlinks=False):
-                count += _count_images(entry.path)
-            elif entry.is_file():
-                ext = Path(entry.name).suffix.lower()
-                if ext in IMAGE_EXTENSIONS:
-                    count += 1
-    except PermissionError:
-        pass
-    return count
+        with open(tics_dir / "config.json") as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {"totalImages": 0, "indexed": 0}
 
 
-def _update_tics_config(tics_dir: Path, total_images: int, indexed: int):
-    """Write or update .tics/config.json."""
+def _write_config(tics_dir: Path, total_images: int, indexed: int):
+    """Write updated stats to .tics/config.json (single source of truth)."""
     config = {
         "totalImages": total_images,
-        "indexedAt": None,
         "indexed": indexed,
     }
     with open(tics_dir / "config.json", "w") as f:
@@ -67,18 +48,9 @@ def _ensure_tics_folder(root_path: str) -> Path:
 
 
 def _simulate_indexing(push_event, root_path: str, total_images: int, offset: int = 0):
-    """Simulate FAISS indexing with real progress tracking."""
-    global _indexing_state
-
+    """Simulate FAISS indexing, writing each result to config.json."""
     tics_dir = _ensure_tics_folder(root_path)
-    _update_tics_config(tics_dir, total_images, offset)
-
-    _indexing_state = {
-        "state": "running",
-        "indexed": offset,
-        "total": total_images,
-        "root_path": root_path,
-    }
+    _write_config(tics_dir, total_images, offset)
 
     push_event({
         "type": "indexing_progress",
@@ -87,16 +59,16 @@ def _simulate_indexing(push_event, root_path: str, total_images: int, offset: in
         "imgsPerSec": 0,
     })
 
-    sim_speed = 50  # simulated images per second
+    sim_speed = 50
     last_push = time.time()
 
     for i in range(offset + 1, total_images + 1):
         if _indexing_cancel_event and _indexing_cancel_event.is_set():
-            _indexing_state["state"] = "idle"
             push_event({"type": "indexing_error", "error": "Cancelled"})
             return
 
-        _indexing_state["indexed"] = i
+        # Persist every image so config.json is always the truth
+        _write_config(tics_dir, total_images, i)
 
         now = time.time()
         if now - last_push >= 0.2 or i == total_images:
@@ -110,19 +82,6 @@ def _simulate_indexing(push_event, root_path: str, total_images: int, offset: in
 
         time.sleep(1.0 / sim_speed)
 
-    config_path = tics_dir / "config.json"
-    if config_path.exists():
-        try:
-            with open(config_path) as f:
-                config = json.load(f)
-            config["indexedAt"] = time.time()
-            config["indexed"] = total_images
-            with open(config_path, "w") as f:
-                json.dump(config, f, indent=2)
-        except Exception:
-            pass
-
-    _indexing_state["state"] = "complete"
     push_event({
         "type": "indexing_complete",
         "indexed": total_images,
@@ -130,41 +89,25 @@ def _simulate_indexing(push_event, root_path: str, total_images: int, offset: in
     })
 
 
-def start_indexing(push_event, root_path: str, total_images: int = 0, indexed_so_far: int = 0) -> dict:
+def start_indexing(push_event, root_path: str, total_images: int, indexed_so_far: int = 0) -> dict:
     """Start indexing in a background thread.
 
     When indexed_so_far > 0, preserves existing .tics/ folder and
-    simulates only the remaining images (incremental/index-new mode).
-    Otherwise (indexed_so_far == 0) clears .tics/ first for a full re-index.
-
-    Returns dict with status and totalImages count.
+    simulates only the remaining images (incremental mode).
+    Otherwise clears .tics/ first for a full re-index.
     """
-    global _indexing_thread, _indexing_cancel_event
+    global _indexing_thread, _indexing_cancel_event, _root_path
 
     if not root_path or not Path(root_path).is_dir():
         return {"status": "error", "error": "Invalid root path"}
 
-    # Cancel any existing indexing
     cancel_indexing()
+    _root_path = root_path
 
-    # Full re-index: remove old .tics/ before starting fresh
     if indexed_so_far == 0:
         clear_index(root_path)
 
-    # If no totalImages passed, scan the folder
-    if total_images <= 0:
-        push_event({
-            "type": "indexing_progress",
-            "indexed": 0,
-            "total": 0,
-            "imgsPerSec": 0,
-            "phase": "scanning",
-        })
-        total_images = _count_images(root_path)
-
     _indexing_cancel_event = ThreadEvent()
-    _indexing_state["state"] = "starting"
-    _indexing_state["indexed"] = indexed_so_far
 
     def run():
         _simulate_indexing(push_event, root_path, total_images, indexed_so_far)
@@ -175,18 +118,26 @@ def start_indexing(push_event, root_path: str, total_images: int = 0, indexed_so
     return {"status": "started", "totalImages": total_images}
 
 
-def get_indexing_status() -> dict:
-    """Return current indexing state."""
-    return {
-        "state": _indexing_state["state"],
-        "indexed": _indexing_state["indexed"],
-        "total": _indexing_state["total"],
-    }
+def get_indexing_status(root_path: str = "") -> dict:
+    """Return indexing state from config.json on disk."""
+    global _root_path
+    rp = root_path or _root_path
+    if not rp:
+        return {"indexed": 0, "total": 0, "state": "idle"}
+    try:
+        cfg = _read_config(Path(rp) / ".tics")
+        return {
+            "indexed": cfg.get("indexed", 0),
+            "total": cfg.get("totalImages", 0),
+            "state": "complete",
+        }
+    except Exception:
+        return {"indexed": 0, "total": 0, "state": "idle"}
 
 
 def cancel_indexing():
     """Cancel in-progress indexing."""
-    global _indexing_thread, _indexing_cancel_event, _indexing_state
+    global _indexing_thread, _indexing_cancel_event
 
     if _indexing_cancel_event:
         _indexing_cancel_event.set()
@@ -197,17 +148,14 @@ def cancel_indexing():
     _indexing_thread = None
     _indexing_cancel_event = None
 
-    if _indexing_state["state"] == "running":
-        _indexing_state["state"] = "idle"
-
 
 def clear_index(root_path: str):
     """Remove .tics directory from root_path."""
-    global _indexing_state
+    global _indexing_thread, _indexing_cancel_event, _root_path
+
+    cancel_indexing()
+    _root_path = ""
 
     tics_dir = Path(root_path) / ".tics"
     if tics_dir.exists():
         shutil.rmtree(tics_dir)
-    _indexing_state["state"] = "idle"
-    _indexing_state["indexed"] = 0
-    _indexing_state["total"] = 0

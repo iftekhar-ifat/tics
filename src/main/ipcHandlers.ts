@@ -7,7 +7,6 @@ import { callBackend } from './backend'
 import { getDataDir, setDataDir as persistDataDir } from './config'
 import { getMainWindow, getBackendStatus } from './state'
 import { getUpdateState } from './state'
-import { startWatcher, stopWatcher, getWatcherStatus } from './watcher'
 import { scanFolderSync } from './folder-scanner'
 import { startFolderWatcher, stopFolderWatcher } from './folder-watcher'
 
@@ -223,25 +222,6 @@ export function registerIpcHandlers(): void {
     } catch (error) {
       return { ok: false, message: String(error) }
     }
-  })
-
-  // Watcher
-  ipcMain.handle('watcher:start', async (_event, rootPath: string) => {
-    const mainWin = getMainWindow()
-    if (mainWin && rootPath) {
-      startWatcher(mainWin, rootPath)
-      return { ok: true }
-    }
-    return { ok: false, message: 'No window or path' }
-  })
-
-  ipcMain.handle('watcher:stop', async () => {
-    stopWatcher()
-    return { ok: true }
-  })
-
-  ipcMain.handle('watcher:get-status', async () => {
-    return getWatcherStatus()
   })
 
   // Updater

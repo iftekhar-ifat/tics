@@ -115,13 +115,6 @@ const api = {
     deleteModelFolder: () => deleteModelFolder(),
     adoptModelFolder: (modelFolderPath: string) => adoptModelFolder(modelFolderPath)
   },
-  watcher: {
-    start: (rootPath: string) =>
-      ipcRenderer.invoke('watcher:start', rootPath) as Promise<{ ok: boolean; message?: string }>,
-    stop: () => ipcRenderer.invoke('watcher:stop') as Promise<{ ok: boolean }>,
-    getStatus: () =>
-      ipcRenderer.invoke('watcher:get-status') as Promise<{ watching: boolean; rootPath: string }>
-  },
   folderWatcher: {
     start: (rootPath: string) =>
       ipcRenderer.invoke('folder-watcher:start', rootPath) as Promise<{

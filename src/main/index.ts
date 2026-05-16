@@ -7,7 +7,6 @@ import { loadConfig, getDataDir } from './config'
 import { createWindow, setupElectronApp, setupWindowShortcuts } from './window'
 import { setupAutoUpdater, checkForUpdates } from './autoUpdater'
 import { registerIpcHandlers } from './ipcHandlers'
-import { stopWatcher } from './watcher'
 
 loadConfig()
 
@@ -59,9 +58,8 @@ app.on('activate', () => {
   }
 })
 
-// Cleanup on quit (stop watcher immediately, wait for backend)
+// Cleanup on quit (wait for backend)
 function cleanup() {
-  stopWatcher()
   setTimeout(() => stopBackend(), 500)
 }
 
