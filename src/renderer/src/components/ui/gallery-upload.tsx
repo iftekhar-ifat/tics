@@ -1,12 +1,10 @@
-'use client'
-
 import { useState } from 'react'
-import { formatBytes, useFileUpload, type FileWithPreview } from '@/hooks/use-file-upload'
+import { useFileUpload, type FileWithPreview } from '@/hooks/use-file-upload'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { Spinner } from '@/components/ui/spinner'
 import {
   WarningDiamondIcon,
@@ -15,6 +13,7 @@ import {
   XIcon,
   MagnifyingGlassPlusIcon
 } from '@phosphor-icons/react'
+import { formatBytes } from '@/utils/helper'
 
 interface GalleryUploadProps {
   accept?: string
@@ -25,19 +24,23 @@ interface GalleryUploadProps {
 
 function ImageCard({
   fileItem,
-  loading,
-  onLoad,
+  ready,
   onView,
   onRemove
 }: {
   fileItem: FileWithPreview
-  loading: boolean
-  onLoad: () => void
+  ready: boolean
   onView: () => void
   onRemove: () => void
 }) {
   const [hovered, setHovered] = useState(false)
+  const [loaded, setLoaded] = useState(false)
   const isImg = fileItem.file.type.startsWith('image/')
+  const src = fileItem.thumbnail ?? fileItem.preview
+
+  if (!ready) {
+    return <div className="bg-muted/50 aspect-square animate-pulse border" />
+  }
 
   return (
     <div
@@ -45,20 +48,18 @@ function ImageCard({
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      {isImg && fileItem.preview ? (
+      {isImg && src ? (
         <>
-          {loading && (
-            <div className="bg-muted/50 absolute inset-0 flex items-center justify-center border">
-              <Spinner className="text-muted-foreground size-6" />
-            </div>
+          {!loaded && (
+            <div className="bg-muted absolute inset-0 flex items-center justify-center border" />
           )}
           <img
-            src={fileItem.preview}
+            src={src}
             alt={fileItem.file.name}
-            onLoad={onLoad}
+            onLoad={() => setLoaded(true)}
             className={cn(
-              'h-full w-full border object-cover transition-all',
-              loading ? 'opacity-0' : 'opacity-100'
+              'h-full w-full border object-cover transition-opacity duration-300',
+              loaded ? 'opacity-100' : 'opacity-0'
             )}
           />
         </>
@@ -69,30 +70,33 @@ function ImageCard({
       )}
 
       {/* Overlay */}
-      {hovered && (
-        <div className="bg-black/50 absolute inset-0 z-10 flex items-center justify-center gap-2">
-          {fileItem.preview && (
-            <Button onClick={onView} variant="secondary" size="icon" className="size-7">
-              <MagnifyingGlassPlusIcon />
-            </Button>
-          )}
-          <Button onClick={onRemove} variant="secondary" size="icon" className="size-7">
-            <XIcon />
+      <div
+        className={cn(
+          'bg-black/50 absolute inset-0 z-10 flex items-center justify-center gap-2 transition-opacity duration-150 select-none',
+          hovered ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        )}
+        onDoubleClick={onView}
+      >
+        {fileItem.preview && (
+          <Button onClick={onView} variant="secondary" size="icon" className="size-7">
+            <MagnifyingGlassPlusIcon />
           </Button>
-        </div>
-      )}
+        )}
+        <Button onClick={onRemove} variant="secondary" size="icon" className="size-7">
+          <XIcon />
+        </Button>
+      </div>
     </div>
   )
 }
 
-export function Pattern({
+export function GalleryUpload({
   accept = 'image/*',
   multiple = true,
   className,
   onFilesChange
 }: GalleryUploadProps) {
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
-  const [loadingImages, setLoadingImages] = useState<Record<string, boolean>>({})
   const [isPreviewLoading, setIsPreviewLoading] = useState(false)
 
   const [
@@ -113,8 +117,17 @@ export function Pattern({
     onFilesChange
   })
 
+  const allThumbnailsReady =
+    files.length === 0 ||
+    files.every((f) => {
+      if (f.file instanceof File && f.file.type.startsWith('image/')) {
+        return f.thumbnail !== undefined
+      }
+      return true
+    })
+
   return (
-    <div className={cn('w-full max-w-4xl', className)}>
+    <div className={cn('w-full', className)}>
       {/* Upload Area */}
       <div
         className={cn(
@@ -143,7 +156,7 @@ export function Pattern({
           </div>
 
           <div className="space-y-2">
-            <h3 className="text-lg font-semibold">Upload images to gallery</h3>
+            <h3 className="text-lg font-semibold">Upload images to root</h3>
             <p className="text-muted-foreground text-sm">
               Drag and drop images here or click to browse
             </p>
@@ -173,26 +186,22 @@ export function Pattern({
 
       {/* Image Grid */}
       {files.length > 0 && (
-        <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
-          {files.map((fileItem) => (
-            <ImageCard
-              key={fileItem.id}
-              fileItem={fileItem}
-              loading={loadingImages[fileItem.id] !== false}
-              onLoad={() =>
-                setLoadingImages((prev) => ({
-                  ...prev,
-                  [fileItem.id]: false
-                }))
-              }
-              onView={() => {
-                setSelectedImage(fileItem.preview!)
-                setIsPreviewLoading(true)
-              }}
-              onRemove={() => removeFile(fileItem.id)}
-            />
-          ))}
-        </div>
+        <ScrollArea className="mt-4 *:data-radix-scroll-area-viewport:max-h-50">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
+            {files.map((fileItem) => (
+              <ImageCard
+                key={fileItem.id}
+                fileItem={fileItem}
+                ready={allThumbnailsReady}
+                onView={() => {
+                  setSelectedImage(fileItem.preview!)
+                  setIsPreviewLoading(true)
+                }}
+                onRemove={() => removeFile(fileItem.id)}
+              />
+            ))}
+          </div>
+        </ScrollArea>
       )}
 
       {/* Error Messages */}
@@ -212,7 +221,10 @@ export function Pattern({
 
       {/* Image Preview Dialog */}
       <Dialog open={!!selectedImage} onOpenChange={(open) => !open && setSelectedImage(null)}>
-        <DialogContent className="**:data-[slot=dialog-close]:text-muted-foreground **:data-[slot=dialog-close]:hover:text-foreground **:data-[slot=dialog-close]:bg-background w-max border-none bg-transparent p-0 shadow-none sm:max-w-1/2 **:data-[slot=dialog-close]:-inset-e-7 **:data-[slot=dialog-close]:-top-7 **:data-[slot=dialog-close]:size-7 **:data-[slot=dialog-close]:rounded-full">
+        <DialogContent
+          aria-describedby={undefined}
+          className="**:data-[slot=dialog-close]:text-muted-foreground **:data-[slot=dialog-close]:hover:text-foreground **:data-[slot=dialog-close]:bg-background w-max border-none bg-transparent p-0 shadow-none sm:max-w-1/2 **:data-[slot=dialog-close]:-inset-e-7 **:data-[slot=dialog-close]:-top-7 **:data-[slot=dialog-close]:size-7 **:data-[slot=dialog-close]:rounded-full"
+        >
           <DialogHeader className="sr-only">
             <DialogTitle>Image Preview</DialogTitle>
           </DialogHeader>

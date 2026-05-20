@@ -1,6 +1,10 @@
+import { formatBytes } from '@/utils/helper'
+import { createImageThumbnail } from '@/utils/image-gallery'
 import type React from 'react'
 import {
   useCallback,
+  useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type ChangeEvent,
@@ -20,6 +24,7 @@ export type FileWithPreview = {
   file: File | FileMetadata
   id: string
   preview?: string
+  thumbnail?: string
 }
 
 export type FileUploadOptions = {
@@ -82,6 +87,14 @@ export const useFileUpload = (
   })
 
   const inputRef = useRef<HTMLInputElement>(null)
+  const onFilesChangeRef = useRef(onFilesChange)
+  useLayoutEffect(() => {
+    onFilesChangeRef.current = onFilesChange
+  })
+
+  useEffect(() => {
+    onFilesChangeRef.current?.(state.files)
+  }, [state.files])
 
   const validateFile = useCallback(
     (file: File | FileMetadata): string | null => {
@@ -139,8 +152,9 @@ export const useFileUpload = (
     setState((prev) => {
       // Clean up object URLs
       for (const file of prev.files) {
-        if (file.preview && file.file instanceof File && file.file.type.startsWith('image/')) {
-          URL.revokeObjectURL(file.preview)
+        if (file.file instanceof File && file.file.type.startsWith('image/')) {
+          if (file.preview) URL.revokeObjectURL(file.preview)
+          if (file.thumbnail) URL.revokeObjectURL(file.thumbnail)
         }
       }
 
@@ -148,16 +162,13 @@ export const useFileUpload = (
         inputRef.current.value = ''
       }
 
-      const newState = {
+      return {
         ...prev,
         files: [],
         errors: []
       }
-
-      onFilesChange?.(newState.files)
-      return newState
     })
-  }, [onFilesChange])
+  }, [])
 
   const addFiles = useCallback(
     (newFiles: FileList | File[]) => {
@@ -222,13 +233,24 @@ export const useFileUpload = (
 
         setState((prev) => {
           const newFiles = !multiple ? validFiles : [...prev.files, ...validFiles]
-          onFilesChange?.(newFiles)
           return {
             ...prev,
             files: newFiles,
             errors
           }
         })
+
+        // Create thumbnails for newly added image files
+        for (const fw of validFiles) {
+          if (fw.file instanceof File && fw.file.type.startsWith('image/')) {
+            createImageThumbnail(fw.file, 200).then((thumbUrl) => {
+              setState((prev) => ({
+                ...prev,
+                files: prev.files.map((f) => (f.id === fw.id ? { ...f, thumbnail: thumbUrl } : f))
+              }))
+            })
+          }
+        }
       } else if (errors.length > 0) {
         onError?.(errors)
         setState((prev) => ({
@@ -246,42 +268,35 @@ export const useFileUpload = (
       state.files,
       maxFiles,
       multiple,
-      maxSize,
       validateFile,
       createPreview,
       generateUniqueId,
       clearFiles,
-      onFilesChange,
       onFilesAdded,
       onError
     ]
   )
 
-  const removeFile = useCallback(
-    (id: string) => {
-      setState((prev) => {
-        const fileToRemove = prev.files.find((file) => file.id === id)
-        if (
-          fileToRemove &&
-          fileToRemove.preview &&
-          fileToRemove.file instanceof File &&
-          fileToRemove.file.type.startsWith('image/')
-        ) {
-          URL.revokeObjectURL(fileToRemove.preview)
-        }
+  const removeFile = useCallback((id: string) => {
+    setState((prev) => {
+      const fileToRemove = prev.files.find((file) => file.id === id)
+      if (
+        fileToRemove &&
+        fileToRemove.file instanceof File &&
+        fileToRemove.file.type.startsWith('image/')
+      ) {
+        if (fileToRemove.preview) URL.revokeObjectURL(fileToRemove.preview)
+        if (fileToRemove.thumbnail) URL.revokeObjectURL(fileToRemove.thumbnail)
+      }
 
-        const newFiles = prev.files.filter((file) => file.id !== id)
-        onFilesChange?.(newFiles)
-
-        return {
-          ...prev,
-          files: newFiles,
-          errors: []
-        }
-      })
-    },
-    [onFilesChange]
-  )
+      const newFiles = prev.files.filter((file) => file.id !== id)
+      return {
+        ...prev,
+        files: newFiles,
+        errors: []
+      }
+    })
+  }, [])
 
   const clearErrors = useCallback(() => {
     setState((prev) => ({
@@ -381,17 +396,4 @@ export const useFileUpload = (
       getInputProps
     }
   ]
-}
-
-// Helper function to format bytes to human-readable format
-export const formatBytes = (bytes: number, decimals = 2): string => {
-  if (bytes === 0) return '0 Bytes'
-
-  const k = 1024
-  const dm = decimals < 0 ? 0 : decimals
-  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
-
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-
-  return Number.parseFloat((bytes / k ** i).toFixed(dm)) + sizes[i]
 }

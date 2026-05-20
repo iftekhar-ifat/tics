@@ -7,7 +7,7 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog'
-import { Pattern as GalleryUpload } from '@/components/ui/gallery-upload'
+import { GalleryUpload } from '@/components/ui/gallery-upload'
 import { useState } from 'react'
 
 export default function UploadToRoot() {
@@ -22,10 +22,10 @@ export default function UploadToRoot() {
       </Button>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="w-full max-w-1/2">
+        <DialogContent className="min-w-xl">
           <DialogHeader>
-            <DialogTitle>Upload to Gallery</DialogTitle>
-            <DialogDescription>Select images to upload to the gallery</DialogDescription>
+            <DialogTitle>Upload to Root</DialogTitle>
+            <DialogDescription>Select images to upload to the root folder</DialogDescription>
           </DialogHeader>
           <GalleryUpload
             accept="image/*"
