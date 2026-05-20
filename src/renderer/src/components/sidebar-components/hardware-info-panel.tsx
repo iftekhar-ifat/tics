@@ -4,7 +4,6 @@ import {
   CpuIcon,
   HardDriveIcon,
   MonitorIcon,
-  SpinnerIcon,
   GraphicsCardIcon,
   WarningIcon,
   ArrowCounterClockwiseIcon
@@ -12,6 +11,7 @@ import {
 import type { InferenceDevice } from '@/stores/onboarding-store'
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
+import { Spinner } from '../ui/spinner'
 
 const HARDWARE_TIMEOUT_MS = 2000
 
@@ -53,7 +53,7 @@ export function HardwareInfoPanel() {
 
     return (
       <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
-        <SpinnerIcon className="h-4 w-4 animate-spin text-sidebar-foreground" />
+        <Spinner className="h-4 w-4 text-sidebar-foreground" />
         <span>Checking hardware...</span>
       </div>
     )

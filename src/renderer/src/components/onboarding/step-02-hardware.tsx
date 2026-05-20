@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useOnboardingStore } from '@/stores/onboarding-store'
 import { useAppStore } from '@/stores/app-store'
-import { CheckIcon, SpinnerIcon } from '@phosphor-icons/react'
+import { CheckIcon } from '@phosphor-icons/react'
 import type { HardwareInfo } from '@/stores/onboarding-store'
+import { Spinner } from '../ui/spinner'
 
 interface CheckItem {
   label: string
@@ -119,7 +120,7 @@ export function Step02Hardware(): React.JSX.Element {
               {check.checked ? (
                 <CheckIcon className="size-3 text-primary" weight="bold" />
               ) : (
-                <SpinnerIcon className="size-3 animate-spin text-muted-foreground" />
+                <Spinner className="size-3 animate-spin text-muted-foreground" />
               )}
             </div>
             <div className="flex-1">

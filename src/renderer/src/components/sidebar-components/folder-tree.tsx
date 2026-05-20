@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { FolderIcon, FolderOpenIcon, ImageIcon, SpinnerIcon } from '@phosphor-icons/react'
+import { FolderIcon, FolderOpenIcon, ImageIcon } from '@phosphor-icons/react'
 import {
   TreeProvider,
   TreeView,
@@ -14,6 +14,7 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { ScrollBar } from '@/components/ui/scroll-area'
 import { useAppStore } from '@/stores/app-store'
+import { Spinner } from '../ui/spinner'
 
 interface TreeNodeData {
   id: string
@@ -127,7 +128,7 @@ function FileTreeNode({
       <TreeNodeTrigger onClick={handleClick}>
         {isLoading ? (
           <div className="mr-1 flex h-4 w-4 items-center justify-center">
-            <SpinnerIcon className="h-3 w-3 animate-spin text-muted-foreground" />
+            <Spinner className="h-3 w-3 text-muted-foreground" />
           </div>
         ) : (
           <TreeExpander hasChildren={hasChildren} />

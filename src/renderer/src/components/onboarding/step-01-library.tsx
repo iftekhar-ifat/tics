@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { useOnboardingStore } from '@/stores/onboarding-store'
 import { useAppStore } from '@/stores/app-store'
 import { Button } from '@/components/ui/button'
-import { FolderOpenIcon, Spinner } from '@phosphor-icons/react'
+import { FolderOpenIcon } from '@phosphor-icons/react'
+import { Spinner } from '../ui/spinner'
 
 export function Step01Library(): React.JSX.Element {
   const { setFolderInfo } = useOnboardingStore()
@@ -69,7 +70,7 @@ export function Step01Library(): React.JSX.Element {
       <div className="flex h-48 w-full max-w-sm flex-col items-center justify-center rounded-md border-2 border-dashed border-border">
         {scanning ? (
           <>
-            <Spinner className="mb-2 size-10 animate-spin text-muted-foreground" />
+            <Spinner className="mb-2 size-10 text-muted-foreground" />
             <p className="text-sm">Scanning folder...</p>
           </>
         ) : (
