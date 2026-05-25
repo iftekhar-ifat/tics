@@ -164,7 +164,7 @@ export function GalleryUpload({
       <Dialog open={!!selectedImage} onOpenChange={(open) => !open && setSelectedImage(null)}>
         <DialogContent
           aria-describedby={undefined}
-          className="**:data-[slot=dialog-close]:text-muted-foreground **:data-[slot=dialog-close]:hover:text-foreground **:data-[slot=dialog-close]:bg-background w-max border-none bg-transparent p-0 shadow-none sm:max-w-1/2 **:data-[slot=dialog-close]:-inset-e-7 **:data-[slot=dialog-close]:-top-7 **:data-[slot=dialog-close]:size-7 **:data-[slot=dialog-close]:rounded-full"
+          className="**:data-[slot=dialog-close]:text-muted-foreground **:data-[slot=dialog-close]:hover:text-foreground **:data-[slot=dialog-close]:bg-background w-max border-none bg-transparent p-0 shadow-none sm:max-w-1/2 **:data-[slot=dialog-close]:-inset-e-7 **:data-[slot=dialog-close]:-top-7 **:data-[slot=dialog-close]:size-7"
         >
           <DialogHeader className="sr-only">
             <DialogTitle>Image Preview</DialogTitle>
