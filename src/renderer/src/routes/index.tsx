@@ -2,6 +2,7 @@ import ChatInput from '@/components/ui/chat-input'
 import UploadToRoot from '@/components/home/upload-to-root'
 import { ScanIcon } from '@phosphor-icons/react'
 import { createFileRoute } from '@tanstack/react-router'
+import HomeScreen from '@/components/home/home-screen'
 
 export const Route = createFileRoute('/')({
   component: HomePage
@@ -25,8 +26,9 @@ function HomePage(): React.JSX.Element {
         <div className="flex justify-end">
           <UploadToRoot />
         </div>
-        <div className="flex flex-1 flex-col justify-end">
-          <div className="w-full max-w-2xl mx-auto">
+        <HomeScreen />
+        <div className="flex flex-col justify-end">
+          <div className="mx-auto w-full max-w-2xl">
             <ChatInput placeholder="Search by text, image, or both..." />
           </div>
         </div>

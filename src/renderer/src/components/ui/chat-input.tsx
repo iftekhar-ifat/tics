@@ -135,7 +135,7 @@ export default function ChatInput({
         'relative border transition-colors',
         isDragging
           ? 'border-primary bg-primary/5'
-          : 'border-muted-foreground/25 hover:border-muted-foreground/50'
+          : 'border-muted-foreground/20 hover:border-muted-foreground/40'
       )}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
