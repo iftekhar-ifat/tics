@@ -97,7 +97,7 @@ export function AppSidebar({ className }: AppSidebarProps): React.JSX.Element {
         <SidebarGroup className="flex-1 overflow-hidden">
           <SidebarGroupLabel className="h-8">
             <div className="flex w-full items-center justify-between">
-              <span className="text-primary text-sm">Folders</span>
+              <span className="text-primary text-sm">Root Folder</span>
               <Button
                 variant="ghost"
                 className="text-muted-foreground"

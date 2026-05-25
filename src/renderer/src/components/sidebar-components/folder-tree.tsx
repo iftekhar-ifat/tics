@@ -195,12 +195,24 @@ export function FolderTree(): React.JSX.Element {
       if (node.loaded) return
 
       try {
-        const subdirs = await window.api.folder.listSubdirectories(node.path)
-        const images = await window.api.folder.getAllImages(node.path)
+        const [subdirs, images] = await Promise.all([
+          window.api.folder.listSubdirectories(node.path),
+          window.api.folder.getAllImages(node.path)
+        ])
+
+        // Only keep subdirectories that contain images
+        const results = await Promise.all(
+          subdirs.map((dir) =>
+            window.api.folder
+              .scanFolder(dir.path)
+              .then((r) => ({ dir, hasImages: r.imageCount > 0 }))
+          )
+        )
+        const validSubdirs = results.filter((r) => r.hasImages).map((r) => r.dir)
 
         const childNodes: TreeNodeData[] = []
 
-        for (const dir of subdirs) {
+        for (const dir of validSubdirs) {
           childNodes.push(
             createFolderNode(dir.name, dir.path, node.path === 'root' ? '' : node.path, true)
           )

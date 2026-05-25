@@ -32,7 +32,7 @@ export default function FolderSettings() {
     <Card size="sm">
       <CardHeader className="border-b">
         <CardTitle className="flex gap-2 items-center text-base">
-          <FolderIcon className="text-muted-foreground" size={24} /> Folder
+          <FolderIcon className="text-muted-foreground" size={24} /> Root Folder
         </CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-2 pt-1">
