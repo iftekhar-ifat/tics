@@ -160,6 +160,11 @@ const api = {
   },
   file: {
     openItem: (path: string) => ipcRenderer.invoke('file:open-item', path) as Promise<void>,
+    readFile: async (filePath: string): Promise<Uint8Array> => {
+      const fs = await import('fs/promises')
+      const buffer = await fs.readFile(filePath)
+      return new Uint8Array(buffer)
+    },
     copyToRoot: async (
       rootPath: string,
       fileName: string,

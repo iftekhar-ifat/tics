@@ -1,5 +1,5 @@
 import { formatBytes } from '@/utils/helper'
-import { createImageThumbnail } from '@/utils/image-gallery'
+import { createImageThumbnail } from '@/utils/image-gallery-helper'
 import type React from 'react'
 import {
   useCallback,
