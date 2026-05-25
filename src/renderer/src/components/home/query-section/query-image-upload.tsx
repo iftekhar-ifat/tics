@@ -1,28 +1,28 @@
-import { useState } from 'react'
-import { useFileUpload, type FileWithPreview } from '@/hooks/use-file-upload'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { cn } from '@/lib/utils'
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import ImageCard from '@/components/ui/image-card'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Spinner } from '@/components/ui/spinner'
-import { WarningDiamondIcon, ImageIcon, UploadIcon } from '@phosphor-icons/react'
+import { FileWithPreview, useFileUpload } from '@/hooks/use-file-upload'
+import { cn } from '@/lib/utils'
 import { formatBytes } from '@/utils/helper'
-import ImageCard from './image-card'
+import { ImageIcon, UploadIcon, WarningDiamondIcon } from '@phosphor-icons/react'
+import { useState } from 'react'
 
-interface GalleryUploadProps {
+interface QueryImageUploadProps {
   accept?: string
   multiple?: boolean
   className?: string
   onFilesChange?: (files: FileWithPreview[]) => void
 }
 
-export function GalleryUpload({
+export function QueryImageUpload({
   accept = 'image/*',
   multiple = true,
   className,
   onFilesChange
-}: GalleryUploadProps) {
+}: QueryImageUploadProps) {
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [isPreviewLoading, setIsPreviewLoading] = useState(false)
 
@@ -72,7 +72,7 @@ export function GalleryUpload({
       {/* Upload Area */}
       <div
         className={cn(
-          'relative border border-dashed p-8 text-center transition-colors',
+          'relative border border-dashed p-6 text-center transition-colors',
           isDragging
             ? 'border-primary bg-primary/5'
             : 'border-muted-foreground/25 hover:border-muted-foreground/50'
@@ -87,7 +87,7 @@ export function GalleryUpload({
         <div className="flex flex-col items-center gap-4">
           <div
             className={cn(
-              'flex h-16 w-16 items-center justify-center rounded-full',
+              'flex h-12 w-12 items-center justify-center rounded-full',
               isDragging ? 'bg-primary/10' : 'bg-muted'
             )}
           >
@@ -97,7 +97,7 @@ export function GalleryUpload({
           </div>
 
           <div className="space-y-2">
-            <h3 className="text-lg font-semibold">Upload images to root</h3>
+            <h3 className="text-base font-semibold">Upload images to search</h3>
             <p className="text-muted-foreground text-sm">
               Drag &amp; drop, select, or paste images here
             </p>
@@ -114,7 +114,7 @@ export function GalleryUpload({
       {files.length > 0 && (
         <div className="mt-6 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <h4 className="text-sm font-medium">Gallery</h4>
+            <h4 className="text-xs font-medium">Gallery</h4>
             <div className="text-muted-foreground text-xs">
               Total: {formatBytes(files.reduce((acc, file) => acc + file.file.size, 0))}
             </div>
@@ -128,7 +128,7 @@ export function GalleryUpload({
       {/* Image Grid */}
       {files.length > 0 && (
         <ScrollArea className="mt-4 *:data-radix-scroll-area-viewport:max-h-50">
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {files.map((fileItem) => (
               <ImageCard
                 key={fileItem.id}
