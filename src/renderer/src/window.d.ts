@@ -111,6 +111,7 @@ interface Window {
     }
     file: {
       openItem: (path: string) => Promise<void>
+      copyToRoot: (rootPath: string, fileName: string, data: ArrayBuffer) => Promise<{ ok: boolean; message?: string }>
     }
   }
 }

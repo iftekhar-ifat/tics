@@ -159,7 +159,38 @@ const api = {
       }>
   },
   file: {
-    openItem: (path: string) => ipcRenderer.invoke('file:open-item', path) as Promise<void>
+    openItem: (path: string) => ipcRenderer.invoke('file:open-item', path) as Promise<void>,
+    copyToRoot: async (
+      rootPath: string,
+      fileName: string,
+      data: ArrayBuffer
+    ): Promise<{ ok: boolean; message?: string }> => {
+      try {
+        const fs = await import('fs/promises')
+        const path = await import('path')
+        const destPath = path.join(rootPath, fileName)
+
+        // Check for name collision and generate unique name if needed
+        let finalPath = destPath
+        let counter = 1
+        while (true) {
+          try {
+            await fs.access(finalPath)
+            const ext = path.extname(destPath)
+            const base = path.basename(destPath, ext)
+            finalPath = path.join(rootPath, `${base} (${counter})${ext}`)
+            counter++
+          } catch {
+            break
+          }
+        }
+
+        await fs.writeFile(finalPath, Buffer.from(data))
+        return { ok: true }
+      } catch (error) {
+        return { ok: false, message: String(error) }
+      }
+    }
   }
 }
 
