@@ -1,7 +1,7 @@
 ### Remaining
 
 - [ ] Move image to Root
-  - [ ] Add clipboard paste functionality
+  - [x] Add clipboard paste functionality
   - [ ] Make move to root folder functional
 - [ ] Actual FAISS embedding + search (still mocked)
 - [ ] File watcher for new images

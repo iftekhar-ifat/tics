@@ -102,6 +102,7 @@ export function GalleryUpload({
   const [
     { files, isDragging, errors },
     {
+      addFiles,
       removeFile,
       clearFiles,
       handleDragEnter,
@@ -126,8 +127,21 @@ export function GalleryUpload({
       return true
     })
 
+  const handlePaste = (e: React.ClipboardEvent) => {
+    const items = e.clipboardData.items
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.startsWith('image/')) {
+        const blob = items[i].getAsFile()
+        if (blob) {
+          addFiles([blob])
+          break
+        }
+      }
+    }
+  }
+
   return (
-    <div className={cn('w-full', className)}>
+    <div className={cn('w-full', className)} onPaste={handlePaste}>
       {/* Upload Area */}
       <div
         className={cn(
@@ -158,7 +172,7 @@ export function GalleryUpload({
           <div className="space-y-2">
             <h3 className="text-lg font-semibold">Upload images to root</h3>
             <p className="text-muted-foreground text-sm">
-              Drag and drop images here or click to browse
+              Drag &amp; drop, select, or paste images here
             </p>
           </div>
 
