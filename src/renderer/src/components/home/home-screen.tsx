@@ -17,7 +17,7 @@ export default function HomeScreen() {
           <img src={TicsLogo} alt="Tics Logo" className="h-full w-full object-contain" />
         </div>
       </div>
-      <div className="bg-gradient-to-b from-foreground via-foreground/80 to-muted-foreground bg-clip-text font-mono whitespace-pre leading-5 text-transparent">
+      <div className="bg-gradient-to-b from-foreground via-foreground/70 to-muted bg-clip-text font-mono whitespace-pre leading-5 text-transparent">
         {ASCII}
       </div>
       <span className="font-mono text-md text-muted-foreground tracking-wide">
