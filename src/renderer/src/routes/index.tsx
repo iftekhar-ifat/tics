@@ -6,6 +6,7 @@ import { useAppStore } from '@/stores/app-store'
 import { ScanIcon } from '@phosphor-icons/react'
 import { createFileRoute } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
+import HomeScreen from '@/components/home/home-screen'
 
 export const Route = createFileRoute('/')({
   component: HomePage
@@ -45,9 +46,12 @@ function HomePage(): React.JSX.Element {
         <div className="flex justify-end">
           <UploadToRoot />
         </div>
-        <div className="min-h-0 flex-1">
-          <ImageGallery images={galleryImages} />
+        <div
+          className={`min-h-0 flex-1 ${galleryImages ? '' : 'flex items-center justify-center'}`}
+        >
+          {galleryImages ? <ImageGallery images={galleryImages} /> : <HomeScreen />}
         </div>
+
         <div className="mx-auto w-full max-w-2xl shrink-0">
           <ChatInput placeholder="Search by text, image, or both..." />
         </div>
