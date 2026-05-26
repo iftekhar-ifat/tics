@@ -47,9 +47,20 @@ function HomePage(): React.JSX.Element {
           <UploadToRoot />
         </div>
         <div
-          className={`min-h-0 flex-1 ${galleryImages ? '' : 'flex items-center justify-center'}`}
+          className={`min-h-0 flex-1 ${
+            galleryImages ? 'flex flex-col' : 'flex items-center justify-center mb-20'
+          }`}
         >
-          {galleryImages ? <ImageGallery images={galleryImages} /> : <HomeScreen />}
+          {galleryImages ? (
+            <>
+              <h2 className="mb-3 text-lg font-semibold tracking-wide">Search Result: </h2>
+              <div className="min-h-0 flex-1">
+                <ImageGallery images={galleryImages} />
+              </div>
+            </>
+          ) : (
+            <HomeScreen />
+          )}
         </div>
 
         <div className="mx-auto w-full max-w-2xl shrink-0">
