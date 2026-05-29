@@ -261,12 +261,13 @@ export function registerIpcHandlers(): void {
     'search:query',
     async (
       _event,
-      params: { text?: string; imagePath?: string; rootPath: string; topK?: number }
+      params: { text?: string; imagePath?: string; imageData?: string; rootPath: string; topK?: number }
     ) => {
       try {
         const result = await callBackend('indexing.search', {
           text: params.text ?? '',
           imagePath: params.imagePath ?? '',
+          imageData: params.imageData ?? '',
           rootPath: params.rootPath,
           topK: params.topK ?? 50
         })

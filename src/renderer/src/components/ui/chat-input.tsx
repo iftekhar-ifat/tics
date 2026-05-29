@@ -78,7 +78,15 @@ export default function ChatInput({
     const items = Array.from(e.clipboardData.items)
     const imageFiles = items
       .filter((item) => item.type.startsWith('image/'))
-      .map((item) => item.getAsFile())
+      .map((item) => {
+        const file = item.getAsFile()
+        if (!file) return null
+        if (!file.name || file.name === 'image.png') {
+          const ext = file.type.split('/')[1] || 'png'
+          return new File([file], `clipboard-image.${ext}`, { type: file.type })
+        }
+        return file
+      })
       .filter(Boolean) as File[]
 
     if (imageFiles.length > 0) {

@@ -3,6 +3,7 @@ import UploadToRoot from '@/components/home/upload-to-root'
 import ImageGallery from '@/components/home/image-gallery'
 import type { GalleryImage } from '@/components/home/image-gallery'
 import { useAppStore } from '@/stores/app-store'
+import { useSettingsStore } from '@/stores/settings-store'
 import { ScanIcon, SpinnerIcon } from '@phosphor-icons/react'
 import { createFileRoute } from '@tanstack/react-router'
 import { useState, useCallback } from 'react'
@@ -14,8 +15,10 @@ export const Route = createFileRoute('/')({
 
 function HomePage(): React.JSX.Element {
   const rootFolder = useAppStore((s) => s.rootFolder)
+  const topK = useSettingsStore((s) => s.topK)
   const [galleryImages, setGalleryImages] = useState<GalleryImage[] | null>(null)
   const [searching, setSearching] = useState(false)
+  const [queryImagePreview, setQueryImagePreview] = useState<string | null>(null)
 
   const handleSend = useCallback(
     async (text: string, imageFiles: File[]) => {
@@ -23,24 +26,22 @@ function HomePage(): React.JSX.Element {
 
       setSearching(true)
 
-      let imagePath = ''
+      let queryPreview: string | null = null
+      let imageData = ''
       if (imageFiles.length > 0) {
         const file = imageFiles[0]
-        const result = await window.api.file.copyToRoot(
-          rootFolder.path,
-          file.name,
-          await file.arrayBuffer()
-        )
-        if (result.ok && result.path) {
-          imagePath = result.path
-        }
+        queryPreview = URL.createObjectURL(file)
+        const bytes = new Uint8Array(await file.arrayBuffer())
+        const binary = bytes.reduce((acc, b) => acc + String.fromCharCode(b), '')
+        imageData = btoa(binary)
       }
+      setQueryImagePreview(queryPreview)
 
       const result = await window.api.search.query({
         text: text.trim(),
-        imagePath,
+        imageData,
         rootPath: rootFolder.path,
-        topK: 50
+        topK
       })
 
       if (result.ok && result.data) {
@@ -51,7 +52,7 @@ function HomePage(): React.JSX.Element {
 
       setSearching(false)
     },
-    [rootFolder]
+    [rootFolder, topK]
   )
 
   return (
@@ -80,9 +81,20 @@ function HomePage(): React.JSX.Element {
         <div className="min-h-0 flex-1">
           {galleryImages && galleryImages.length > 0 ? (
             <div className="flex h-full flex-col">
-              <h2 className="mb-3 text-lg font-semibold tracking-wide">
-                Results: {galleryImages.length} images
-              </h2>
+              <div className="mb-3 flex items-center gap-3">
+                {queryImagePreview && (
+                  <div className="size-10 shrink-0 overflow-hidden rounded border">
+                    <img
+                      src={queryImagePreview}
+                      alt="Query"
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                )}
+                <h2 className="text-lg font-semibold tracking-wide">
+                  Results: Similar {galleryImages.length} images
+                </h2>
+              </div>
               <div className="min-h-0 flex-1">
                 <ImageGallery images={galleryImages} />
               </div>

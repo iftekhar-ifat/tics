@@ -14,7 +14,8 @@ from model_manager import (
     _delete_model_files,
 )
 from hardware_info import get_system_info
-from indexing import start_indexing, get_indexing_status, cancel_indexing, clear_index, search as search_index
+from indexing import start_indexing, get_indexing_status, cancel_indexing, clear_index
+from search import search as search_index
 
 
 def push_event(event_type: str, data: dict = None):
@@ -127,9 +128,10 @@ async def handle_request(request):
     async def handle_search(p):
         text = p.get("text", "")
         image_path = p.get("imagePath", "")
+        image_data = p.get("imageData", "")
         root_path = p.get("rootPath", "")
         top_k = p.get("topK", 50)
-        results = search_index(text, image_path, root_path, top_k)
+        results = search_index(text, image_path, image_data, root_path, top_k)
         return {"results": results}
 
     handlers = {

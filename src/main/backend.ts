@@ -127,7 +127,7 @@ export function startBackend(currentDataDir: string): void {
             }
           }
         } catch {
-          // Not JSON, ignore
+          console.log('[Backend]', line)
         }
       }
     })

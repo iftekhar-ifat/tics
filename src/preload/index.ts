@@ -162,6 +162,7 @@ const api = {
     query: (params: {
       text?: string
       imagePath?: string
+      imageData?: string
       rootPath: string
       topK?: number
     }) =>

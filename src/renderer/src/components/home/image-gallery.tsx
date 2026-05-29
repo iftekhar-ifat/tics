@@ -74,7 +74,7 @@ function GalleryCard({ image }: GalleryCardProps) {
         />
       )}
       <Badge variant="secondary" className="absolute top-0 right-0 shrink-0 text-xs bg-background">
-        Sim {image.score.toFixed(1)}%
+        Similarity: {Number(image.score.toFixed(1)) * 100}%
       </Badge>
       <div className="absolute bottom-0 left-0 right-0 bg-linear-to-t from-black/70 to-transparent px-2 pb-1.5 pt-5">
         <span className="block min-w-0 truncate text-xs text-white">{image.name}</span>

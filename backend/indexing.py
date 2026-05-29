@@ -2,9 +2,7 @@ import json
 import sys
 import time
 import shutil
-import pickle
 import threading
-import platform
 from pathlib import Path
 from threading import Event as ThreadEvent
 
@@ -12,6 +10,7 @@ import numpy as np
 import faiss
 from PIL import Image
 
+from common import CLIP_DIM, _load_index, _save_index, _get_device
 from model_manager import get_clip_model
 
 # Module-level state
@@ -19,8 +18,21 @@ _indexing_thread: threading.Thread | None = None
 _indexing_cancel_event: ThreadEvent | None = None
 _root_path: str = ""
 
-IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.tiff', '.tif', '.avif', '.svg', '.ico', '.heic', '.heif'}
-CLIP_DIM = 512
+IMAGE_EXTENSIONS = {
+    ".jpg",
+    ".jpeg",
+    ".png",
+    ".gif",
+    ".bmp",
+    ".webp",
+    ".tiff",
+    ".tif",
+    ".avif",
+    ".svg",
+    ".ico",
+    ".heic",
+    ".heif",
+}
 
 
 def _read_config(tics_dir: Path) -> dict:
@@ -31,7 +43,9 @@ def _read_config(tics_dir: Path) -> dict:
         return {"indexed": 0}
 
 
-def _write_config(tics_dir: Path, indexed: int, root_path: str = "", total_images: int = 0):
+def _write_config(
+    tics_dir: Path, indexed: int, root_path: str = "", total_images: int = 0
+):
     config = {"indexed": indexed, "totalImages": total_images}
     if root_path:
         config["rootPath"] = root_path
@@ -55,57 +69,40 @@ def _get_image_files(root_path: str) -> list[Path]:
     return sorted(files)
 
 
-def _load_index(tics_dir: Path):
-    """Load existing FAISS index and paths list, or return None."""
-    index_path = tics_dir / "index.faiss"
-    pkl_path = tics_dir / "index.pkl"
-    if index_path.exists() and pkl_path.exists() and index_path.stat().st_size > 0:
-        index = faiss.read_index(str(index_path))
-        with open(pkl_path, "rb") as f:
-            paths = pickle.load(f)
-        return index, paths
-    return None
-
-
-def _save_index(tics_dir: Path, index: faiss.Index, paths: list[str]):
-    tmp_index = tics_dir / "index.faiss.tmp"
-    tmp_pkl = tics_dir / "index.pkl.tmp"
-    faiss.write_index(index, str(tmp_index))
-    with open(tmp_pkl, "wb") as f:
-        pickle.dump(paths, f)
-    tmp_index.replace(tics_dir / "index.faiss")
-    tmp_pkl.replace(tics_dir / "index.pkl")
-
-
-def _get_device():
-    import torch
-    if torch.cuda.is_available():
-        return "cuda"
-    if platform.system() == "Darwin" and hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
-        return "mps"
-    return "cpu"
-
-
 def _embed_image(image_path: Path, model, processor, device: str):
     """Return L2-normalized CLIP embedding vector of shape (1, 512) or None."""
     import torch
+
     try:
         image = Image.open(image_path).convert("RGB")
-    except Exception:
+    except Exception as e:
+        print(f"[embed] Cannot open {image_path}: {e}", file=sys.stderr, flush=True)
         return None
 
     try:
-        inputs = processor(images=image, return_tensors="pt").to(device)
+        inputs = processor(images=image, return_tensors="pt")
+        pixel_values = inputs["pixel_values"].to(device)
         with torch.no_grad():
-            emb = model.get_image_features(**inputs)
-        emb = emb.cpu().numpy().astype(np.float32)
+            vision_outputs = model.vision_model(pixel_values=pixel_values)
+            emb = model.visual_projection(vision_outputs.pooler_output)
+        emb = emb.detach().cpu().numpy().astype(np.float32)
         faiss.normalize_L2(emb)
         return emb
-    except Exception:
+    except Exception as e:
+        print(
+            f"[embed] Embedding failed for {image_path}: {e}",
+            file=sys.stderr,
+            flush=True,
+        )
+        import traceback
+
+        traceback.print_exc(file=sys.stderr)
         return None
 
 
-def _run_indexing(push_event, root_path: str, all_files: list[Path], indexed_so_far: int):
+def _run_indexing(
+    push_event, root_path: str, all_files: list[Path], indexed_so_far: int
+):
     """Index images from all_files, skipping the first indexed_so_far entries."""
     tics_dir = _ensure_tics_folder(root_path)
     total = len(all_files)
@@ -148,14 +145,17 @@ def _run_indexing(push_event, root_path: str, all_files: list[Path], indexed_so_
             speed = i / elapsed if elapsed > 0 else 0
             if now - last_push >= 0.2:
                 _save_index(tics_dir, index, existing_paths)
-                push_event({
-                    "type": "indexing_progress",
-                    "indexed": i,
-                    "imgsPerSec": round(speed, 1),
-                })
+                push_event(
+                    {
+                        "type": "indexing_progress",
+                        "indexed": i,
+                        "imgsPerSec": round(speed, 1),
+                    }
+                )
                 last_push = now
     except Exception as e:
         import traceback
+
         traceback.print_exc(file=sys.stderr)
         push_event({"type": "indexing_error", "error": str(e)})
         return
@@ -179,7 +179,11 @@ def start_indexing(
         clear_index(root_path)
 
     all_files = _get_image_files(root_path)
-    print(f"[indexing] Scanned {len(all_files)} images from {root_path}", flush=True, file=sys.stderr)
+    print(
+        f"[indexing] Scanned {len(all_files)} images from {root_path}",
+        flush=True,
+        file=sys.stderr,
+    )
 
     _indexing_cancel_event = ThreadEvent()
 
@@ -233,65 +237,3 @@ def clear_index(root_path: str):
     if tics_dir.exists():
         shutil.rmtree(tics_dir)
 
-
-def search(
-    query_text: str = "",
-    query_image_path: str = "",
-    root_path: str = "",
-    top_k: int = 50,
-) -> list[dict]:
-    """Search indexed images by text and/or image. Returns [{path, name, score}]."""
-    if not root_path:
-        return []
-
-    tics_dir = Path(root_path) / ".tics"
-    loaded = _load_index(tics_dir)
-    if loaded is None:
-        return []
-    index, paths = loaded
-    if index.ntotal == 0:
-        return []
-
-    model, processor = get_clip_model()
-    device = _get_device()
-
-    import torch
-
-    if query_text and query_image_path:
-        text_inputs = processor(text=[query_text], return_tensors="pt", padding=True).to(device)
-        image = Image.open(query_image_path).convert("RGB")
-        image_inputs = processor(images=image, return_tensors="pt").to(device)
-        with torch.no_grad():
-            text_emb = model.get_text_features(**text_inputs)
-            image_emb = model.get_image_features(**image_inputs)
-        emb = (text_emb + image_emb) / 2
-    elif query_text:
-        text_inputs = processor(text=[query_text], return_tensors="pt", padding=True).to(device)
-        with torch.no_grad():
-            emb = model.get_text_features(**text_inputs)
-    elif query_image_path:
-        image = Image.open(query_image_path).convert("RGB")
-        image_inputs = processor(images=image, return_tensors="pt").to(device)
-        with torch.no_grad():
-            emb = model.get_image_features(**image_inputs)
-    else:
-        return []
-
-    emb = emb.cpu().numpy().astype(np.float32)
-    faiss.normalize_L2(emb)
-
-    top_k = min(top_k, index.ntotal)
-    scores, indices = index.search(emb, top_k)
-
-    results = []
-    for score, idx in zip(scores[0], indices[0]):
-        if idx < 0 or idx >= len(paths):
-            continue
-        p = Path(paths[idx])
-        results.append({
-            "path": str(p),
-            "name": p.name,
-            "score": round(float(score), 4),
-        })
-
-    return results

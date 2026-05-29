@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware'
 
 interface SettingsState {
   // Search Defaults
+  topK: number
   fusionWeight: number
   sortOrder: 'similarity' | 'newest' | 'oldest'
 
@@ -32,6 +33,7 @@ export const useSettingsStore = create<SettingsState>()(
   persist(
     (set) => ({
       // Search Defaults
+      topK: 50,
       fusionWeight: 50,
       sortOrder: 'similarity' as const,
 
@@ -49,6 +51,7 @@ export const useSettingsStore = create<SettingsState>()(
       skipHiddenFolders: false,
 
       // Actions
+      setTopK: (k: number) => set({ topK: k }),
       setFusionWeight: (weight) => set({ fusionWeight: weight }),
       setSortOrder: (order) => set({ sortOrder: order }),
       setWatcherPaused: (paused) => set({ watcherPaused: paused }),
