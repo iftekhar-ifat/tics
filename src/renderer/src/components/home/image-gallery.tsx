@@ -4,6 +4,7 @@ import { ImageIcon } from '@phosphor-icons/react'
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
 import { createImageThumbnail } from '@/utils/image-gallery-helper'
 import { Button } from '../ui/button'
+import { Badge } from '../ui/badge'
 export interface GalleryImage {
   path: string
   name: string
@@ -72,9 +73,11 @@ function GalleryCard({ image }: GalleryCardProps) {
           )}
         />
       )}
-      <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between gap-2 bg-gradient-to-t from-black/70 to-transparent px-2 pb-1.5 pt-5">
-        <span className="min-w-0 truncate text-xs text-white">{image.name}</span>
-        <span className="shrink-0 text-xs text-white/80">{image.score.toFixed(2)}</span>
+      <Badge variant="secondary" className="absolute top-0 right-0 shrink-0 text-xs bg-background">
+        Sim {image.score.toFixed(1)}%
+      </Badge>
+      <div className="absolute bottom-0 left-0 right-0 bg-linear-to-t from-black/70 to-transparent px-2 pb-1.5 pt-5">
+        <span className="block min-w-0 truncate text-xs text-white">{image.name}</span>
       </div>
     </div>
   )
