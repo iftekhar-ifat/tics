@@ -18,6 +18,7 @@ def search(
     query_image_data: str = "",
     root_path: str = "",
     top_k: int = 50,
+    fusion_weight: int = 50,
 ) -> list[dict]:
     """Search indexed images by text and/or image (path or base64 data). Returns [{path, name, score}]."""
 
@@ -62,9 +63,10 @@ def search(
                 vision_out = model.vision_model(
                     pixel_values=image_inputs["pixel_values"].to(device)
                 )
+            alpha = fusion_weight / 100.0
             text_emb = model.text_projection(text_out.pooler_output)
             image_emb = model.visual_projection(vision_out.pooler_output)
-            emb = (text_emb + image_emb) / 2
+            emb = text_emb * alpha + image_emb * (1.0 - alpha)
         elif has_text:
             text_inputs = processor(
                 text=[query_text], return_tensors="pt", padding=True

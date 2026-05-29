@@ -21,6 +21,7 @@ interface SettingsState {
   skipHiddenFolders: boolean
 
   // Actions
+  setTopK: (k: number) => void
   setFusionWeight: (weight: number) => void
   setSortOrder: (order: 'similarity' | 'newest' | 'oldest') => void
   setWatcherPaused: (paused: boolean) => void
@@ -65,6 +66,7 @@ export const useSettingsStore = create<SettingsState>()(
       setSkipHiddenFolders: (skip) => set({ skipHiddenFolders: skip }),
       resetToDefaults: () =>
         set({
+          topK: 50,
           fusionWeight: 50,
           sortOrder: 'similarity',
           watcherPaused: false,

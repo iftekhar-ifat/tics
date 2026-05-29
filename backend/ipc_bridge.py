@@ -131,7 +131,8 @@ async def handle_request(request):
         image_data = p.get("imageData", "")
         root_path = p.get("rootPath", "")
         top_k = p.get("topK", 50)
-        results = search_index(text, image_path, image_data, root_path, top_k)
+        fusion_weight = p.get("fusionWeight", 50)
+        results = search_index(text, image_path, image_data, root_path, top_k, fusion_weight)
         return {"results": results}
 
     handlers = {

@@ -261,7 +261,7 @@ export function registerIpcHandlers(): void {
     'search:query',
     async (
       _event,
-      params: { text?: string; imagePath?: string; imageData?: string; rootPath: string; topK?: number }
+      params: { text?: string; imagePath?: string; imageData?: string; rootPath: string; topK?: number; fusionWeight?: number }
     ) => {
       try {
         const result = await callBackend('indexing.search', {
@@ -269,7 +269,8 @@ export function registerIpcHandlers(): void {
           imagePath: params.imagePath ?? '',
           imageData: params.imageData ?? '',
           rootPath: params.rootPath,
-          topK: params.topK ?? 50
+          topK: params.topK ?? 50,
+          fusionWeight: params.fusionWeight ?? 50
         })
         return { ok: true, data: result }
       } catch (error) {

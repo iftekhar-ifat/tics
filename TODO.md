@@ -4,7 +4,7 @@
 - [x] `backend/model_manager.py` — Add `get_clip_model()` singleton loader (cached, device-aware)
 - [x] `backend/indexing.py` — Replace mock with real pipeline
 - [x] `backend/indexing.py` — Removed dead `meta.db` placeholder
-- [x] `backend/indexing.py` — Added `search()` function
+- [x] `backend/indexing.py` — Added `search()` function (later moved to `search.py`)
 
 ### Milestone 2: Search endpoint + IPC wiring ✅
 - [x] All IPC layers wired (ipc_bridge → ipcHandlers → preload → window.d.ts)
@@ -15,6 +15,8 @@
 - [x] In-memory embedding via base64 → `vision_model` + `visual_projection`
 - [x] `topK` configurable via `settings-store` (default 50)
 
-### Milestone 4: Settings UI (pending)
-- [ ] Add `topK` slider/input in settings panel
-- [ ] Add result count label to gallery
+### Milestone 4: Settings UI ✅
+- [x] `topK` slider (1–200 range) in Search Defaults section
+- [x] `SearchDefaultsSection` wired into settings route
+- [x] Result count label in gallery (`"Results: N images"`)
+- [x] Fusion weight slider + sort order dropdown already present

@@ -116,6 +116,7 @@ interface Window {
         imageData?: string
         rootPath: string
         topK?: number
+        fusionWeight?: number
       }) => Promise<{
         ok: boolean
         data?: { results: { path: string; name: string; score: number }[] }

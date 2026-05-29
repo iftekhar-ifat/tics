@@ -18,6 +18,7 @@ export const Route = createFileRoute('/')({
 function HomePage(): React.JSX.Element {
   const rootFolder = useAppStore((s) => s.rootFolder)
   const topK = useSettingsStore((s) => s.topK)
+  const fusionWeight = useSettingsStore((s) => s.fusionWeight)
   const [galleryImages, setGalleryImages] = useState<GalleryImage[] | null>(null)
   const [searching, setSearching] = useState(false)
   const [queryImagePreview, setQueryImagePreview] = useState<string | null>(null)
@@ -43,7 +44,8 @@ function HomePage(): React.JSX.Element {
         text: text.trim(),
         imageData,
         rootPath: rootFolder.path,
-        topK
+        topK,
+        fusionWeight
       })
 
       if (result.ok && result.data) {
@@ -54,7 +56,7 @@ function HomePage(): React.JSX.Element {
 
       setSearching(false)
     },
-    [rootFolder, topK]
+    [rootFolder, topK, fusionWeight]
   )
 
   return (

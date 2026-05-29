@@ -1,34 +1,25 @@
 import { useState, useCallback } from 'react'
+import { InfoIcon, MagnifyingGlassIcon } from '@phosphor-icons/react'
 import { Slider } from '@/components/ui/slider'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useSettingsStore } from '@/stores/settings-store'
-
-interface SliderProps {
-  value: number[]
-  onValueChange: (value: number[]) => void
-}
-
-const CustomSlider = ({ value, onValueChange }: SliderProps) => (
-  <div className="flex items-center gap-3 py-1">
-    <span className="text-xs text-muted-foreground w-8">0</span>
-    <div className="flex-1">
-      <Slider value={value} onValueChange={onValueChange} max={100} step={1} className="w-full" />
-    </div>
-    <span className="text-xs text-muted-foreground w-8 text-right">100</span>
-  </div>
-)
+import { Button } from '../ui/button'
 
 export function SearchDefaultsSection(): React.JSX.Element {
-  const { fusionWeight, sortOrder, setFusionWeight, setSortOrder } = useSettingsStore()
+  const { topK, fusionWeight, setTopK, setFusionWeight } = useSettingsStore()
+  const [topKValue, setTopKValue] = useState(topK)
   const [weightValue, setWeightValue] = useState(fusionWeight)
+
+  const handleTopKChange = useCallback(
+    (value: number[]) => {
+      const newValue = value[0]
+      setTopKValue(newValue)
+      setTopK(newValue)
+    },
+    [setTopK]
+  )
 
   const handleWeightChange = useCallback(
     (value: number[]) => {
@@ -40,43 +31,61 @@ export function SearchDefaultsSection(): React.JSX.Element {
   )
 
   return (
-    <Card className="rounded-none border-b-0 border-x-0 bg-card shadow-none">
-      <CardHeader className="px-4 py-3">
-        <CardTitle className="text-sm">Search Defaults</CardTitle>
+    <Card size="sm">
+      <CardHeader className="border-b">
+        <CardTitle className="flex gap-2 items-center text-base">
+          <MagnifyingGlassIcon className="text-muted-foreground" size={24} /> Search Defaults
+        </CardTitle>
       </CardHeader>
       <CardContent className="space-y-5 px-4 pb-4">
-        {/* Fusion Weight Slider */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label className="text-sm">Image + Text Fusion Weight</Label>
-            <span className="text-xs text-muted-foreground">{weightValue}%</span>
+        <TooltipProvider>
+          {/* Top-K Slider */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1">
+                <Label className="text-sm font-medium text-muted-foreground">
+                  Max Results (Top-K)
+                </Label>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="outline" type="button" size="icon">
+                      <InfoIcon size={14} />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-60">
+                    Maximum number of results to return in a search.
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+              <span className="text-xs text-muted-foreground">{topKValue}</span>
+            </div>
+            <Slider value={[topKValue]} onValueChange={handleTopKChange} max={200} />
           </div>
-          <CustomSlider value={[weightValue]} onValueChange={handleWeightChange} />
-        </div>
 
-        {/* Sort Order Dropdown */}
-        <div className="space-y-2">
-          <Label className="text-sm">Default Result Sort Order</Label>
-          <Select
-            value={sortOrder}
-            onValueChange={(v: 'similarity' | 'newest' | 'oldest') => setSortOrder(v)}
-          >
-            <SelectTrigger className="h-8 w-full rounded-none border bg-background text-xs">
-              <SelectValue placeholder="Select sort order" />
-            </SelectTrigger>
-            <SelectContent className="rounded-none border bg-popover">
-              <SelectItem value="similarity" className="text-xs">
-                Most Similar
-              </SelectItem>
-              <SelectItem value="newest" className="text-xs">
-                Newest
-              </SelectItem>
-              <SelectItem value="oldest" className="text-xs">
-                Oldest
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+          {/* Fusion Weight Slider */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1">
+                <Label className="text-sm font-medium text-muted-foreground">
+                  Image + Text Fusion Weight
+                </Label>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="outline" type="button" size="icon">
+                      <InfoIcon size={14} />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-60">
+                    Blends text and image embeddings when both are provided. 100% = pure text, 0% =
+                    pure image, 50% = equal blend.
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+              <span className="text-xs text-muted-foreground">{weightValue}%</span>
+            </div>
+            <Slider value={[weightValue]} onValueChange={handleWeightChange} />
+          </div>
+        </TooltipProvider>
       </CardContent>
     </Card>
   )

@@ -3,6 +3,7 @@ import { GearSixIcon } from '@phosphor-icons/react'
 import FolderSettings from '@/components/settings/folder-settings'
 import { IndexingSettings } from '@/components/settings/indexing-settings'
 import { ModelSettings } from '@/components/settings/model-settings/model-settings'
+import { SearchDefaultsSection } from '@/components/settings/search-defaults-section'
 import { AboutSection } from '@/components/settings/about-section'
 import { Separator } from '@/components/ui/separator'
 
@@ -27,6 +28,7 @@ function SettingsPage(): React.JSX.Element {
             <IndexingSettings />
           </div>
           <ModelSettings />
+          <SearchDefaultsSection />
         </div>
       </div>
       <Separator className="my-2" />
