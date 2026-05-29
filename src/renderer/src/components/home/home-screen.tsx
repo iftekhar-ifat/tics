@@ -20,7 +20,7 @@ export default function HomeScreen() {
       <div className="bg-linear-to-b from-foreground via-foreground/70 to-muted bg-clip-text font-mono whitespace-pre leading-5 text-transparent">
         {ASCII}
       </div>
-      <span className="font-mono text-md text-muted-foreground tracking-wide">
+      <span className="font-mono text-base text-muted-foreground tracking-wide">
         Text-Image-Context-Search
       </span>
     </div>

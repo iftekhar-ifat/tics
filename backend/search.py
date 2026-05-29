@@ -20,11 +20,6 @@ def search(
     top_k: int = 50,
 ) -> list[dict]:
     """Search indexed images by text and/or image (path or base64 data). Returns [{path, name, score}]."""
-    print(
-        f"[search] Called: text={query_text!r} has_path={bool(query_image_path)} has_data={bool(query_image_data)} root={root_path!r}",
-        file=sys.stderr,
-        flush=True,
-    )
 
     if not root_path:
         print("[search] Empty root_path", file=sys.stderr, flush=True)

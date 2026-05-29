@@ -4,10 +4,12 @@ import ImageGallery from '@/components/home/image-gallery'
 import type { GalleryImage } from '@/components/home/image-gallery'
 import { useAppStore } from '@/stores/app-store'
 import { useSettingsStore } from '@/stores/settings-store'
-import { ScanIcon, SpinnerIcon } from '@phosphor-icons/react'
+import { ScanIcon, TrashIcon } from '@phosphor-icons/react'
 import { createFileRoute } from '@tanstack/react-router'
 import { useState, useCallback } from 'react'
 import HomeScreen from '@/components/home/home-screen'
+import LoadingLogo from '@/components/ui/loading-logo'
+import { Button } from '@/components/ui/button'
 
 export const Route = createFileRoute('/')({
   component: HomePage
@@ -72,16 +74,11 @@ function HomePage(): React.JSX.Element {
         <div className="flex justify-end">
           <UploadToRoot />
         </div>
-        {searching && (
-          <div className="flex items-center justify-center gap-2 py-8 text-muted-foreground">
-            <SpinnerIcon className="size-5 animate-spin" />
-            <span className="text-sm">Searching...</span>
-          </div>
-        )}
+
         <div className="min-h-0 flex-1">
           {galleryImages && galleryImages.length > 0 ? (
             <div className="flex h-full flex-col">
-              <div className="mb-3 flex items-center gap-3">
+              <div className="mb-3 flex items-center gap-4">
                 {queryImagePreview && (
                   <div className="size-10 shrink-0 overflow-hidden rounded border">
                     <img
@@ -91,9 +88,21 @@ function HomePage(): React.JSX.Element {
                     />
                   </div>
                 )}
-                <h2 className="text-lg font-semibold tracking-wide">
-                  Results: Similar {galleryImages.length} images
-                </h2>
+                <div className="w-full flex justify-between">
+                  <h2 className="font-mono text-lg font-semibold">
+                    Top {galleryImages.length} similar images
+                  </h2>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setGalleryImages(null)
+                      setQueryImagePreview(null)
+                    }}
+                  >
+                    <TrashIcon />
+                    Clear
+                  </Button>
+                </div>
               </div>
               <div className="min-h-0 flex-1">
                 <ImageGallery images={galleryImages} />
@@ -104,7 +113,10 @@ function HomePage(): React.JSX.Element {
               <p className="text-muted-foreground text-sm">No results found</p>
             </div>
           ) : (
-            <HomeScreen />
+            // pb-16 is needed to keep the <HomeScreen /> in the middle
+            <div className="pb-16 flex h-full items-center justify-center">
+              {searching ? <LoadingLogo text="Searching..." /> : <HomeScreen />}
+            </div>
           )}
         </div>
 
