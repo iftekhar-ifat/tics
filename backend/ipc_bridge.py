@@ -14,7 +14,7 @@ from model_manager import (
     _delete_model_files,
 )
 from hardware_info import get_system_info
-from indexing import start_indexing, get_indexing_status, cancel_indexing, clear_index
+from indexing import start_indexing, get_indexing_status, cancel_indexing, clear_index, search as search_index
 
 
 def push_event(event_type: str, data: dict = None):
@@ -124,6 +124,14 @@ async def handle_request(request):
             return {"status": "cleared"}
         return {"status": "error", "error": "No root path provided"}
 
+    async def handle_search(p):
+        text = p.get("text", "")
+        image_path = p.get("imagePath", "")
+        root_path = p.get("rootPath", "")
+        top_k = p.get("topK", 50)
+        results = search_index(text, image_path, root_path, top_k)
+        return {"results": results}
+
     handlers = {
         "system.getOSInfo": lambda p: get_system_info(),
         "model.getStatus": handle_model_get_status,
@@ -134,6 +142,7 @@ async def handle_request(request):
         "indexing.getStatus": handle_indexing_get_status,
         "indexing.cancel": handle_indexing_cancel,
         "index.clear": handle_index_clear,
+        "indexing.search": handle_search,
     }
 
     try:

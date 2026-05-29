@@ -158,6 +158,19 @@ const api = {
         message?: string
       }>
   },
+  search: {
+    query: (params: {
+      text?: string
+      imagePath?: string
+      rootPath: string
+      topK?: number
+    }) =>
+      ipcRenderer.invoke('search:query', params) as Promise<{
+        ok: boolean
+        data?: { results: { path: string; name: string; score: number }[] }
+        message?: string
+      }>
+  },
   file: {
     openItem: (path: string) => ipcRenderer.invoke('file:open-item', path) as Promise<void>,
     readFile: async (filePath: string): Promise<Uint8Array> => {
@@ -169,13 +182,12 @@ const api = {
       rootPath: string,
       fileName: string,
       data: ArrayBuffer
-    ): Promise<{ ok: boolean; message?: string }> => {
+    ): Promise<{ ok: boolean; path?: string; message?: string }> => {
       try {
         const fs = await import('fs/promises')
         const path = await import('path')
         const destPath = path.join(rootPath, fileName)
 
-        // Check for name collision and generate unique name if needed
         let finalPath = destPath
         let counter = 1
         while (true) {
@@ -191,7 +203,7 @@ const api = {
         }
 
         await fs.writeFile(finalPath, Buffer.from(data))
-        return { ok: true }
+        return { ok: true, path: finalPath }
       } catch (error) {
         return { ok: false, message: String(error) }
       }

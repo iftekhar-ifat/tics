@@ -1,3 +1,1 @@
-### Remaining
-
-- [ ] Implement the image embedding
+## Milestones

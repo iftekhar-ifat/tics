@@ -72,6 +72,8 @@ export function useIndexing() {
     const result = await window.api.indexing.start(rootFolder.path, folderStats.imageCount, offset)
     if (!result.ok) {
       setStatus((prev) => ({ ...prev, state: 'idle' }))
+    } else if (result.data?.imageCount) {
+      setStatus((prev) => ({ ...prev, indexed: Math.min(prev.indexed, result.data!.imageCount!) }))
     }
   }
 
@@ -91,15 +93,14 @@ export function useIndexing() {
   }
 
   const { indexed, state: rawState } = status
-  const displayTotal = folderStats.imageCount || 0
+  const displayTotal = rawState === 'complete' ? indexed : Math.max(indexed, folderStats.imageCount || 0)
   const safeIndexed = Math.min(indexed, displayTotal)
   const remaining = displayTotal - safeIndexed
   const pct = displayTotal > 0 ? Math.round((safeIndexed / displayTotal) * 100) : 0
   const isRunning = rawState === 'running'
-  const effectiveComplete = rawState === 'complete' && safeIndexed >= displayTotal
-  const showReindex = !isRunning && safeIndexed >= displayTotal
+  const effectiveComplete = rawState === 'complete'
+  const showReindex = effectiveComplete && !isRunning
   const effectiveState = effectiveComplete ? 'complete' : isRunning ? 'running' : 'idle'
-
   return {
     status,
     safeIndexed,

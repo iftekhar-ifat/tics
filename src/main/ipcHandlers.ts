@@ -256,6 +256,27 @@ export function registerIpcHandlers(): void {
     status: getBackendStatus()
   }))
 
+  // Search
+  ipcMain.handle(
+    'search:query',
+    async (
+      _event,
+      params: { text?: string; imagePath?: string; rootPath: string; topK?: number }
+    ) => {
+      try {
+        const result = await callBackend('indexing.search', {
+          text: params.text ?? '',
+          imagePath: params.imagePath ?? '',
+          rootPath: params.rootPath,
+          topK: params.topK ?? 50
+        })
+        return { ok: true, data: result }
+      } catch (error) {
+        return { ok: false, message: String(error) }
+      }
+    }
+  )
+
   // Folder watcher (pure Electron IPC)
   ipcMain.handle('folder-watcher:start', async (_event, rootPath: string) => {
     if (!rootPath) return { ok: false, message: 'No path provided' }

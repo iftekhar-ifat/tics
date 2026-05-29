@@ -87,7 +87,7 @@ interface Window {
         indexedSoFar?: number
       ) => Promise<{
         ok: boolean
-        data?: { status: string }
+        data?: { status: string; imageCount?: number }
         message?: string
       }>
       getStatus: (rootPath?: string) => Promise<{
@@ -109,10 +109,22 @@ interface Window {
         message?: string
       }>
     }
+    search: {
+      query: (params: {
+        text?: string
+        imagePath?: string
+        rootPath: string
+        topK?: number
+      }) => Promise<{
+        ok: boolean
+        data?: { results: { path: string; name: string; score: number }[] }
+        message?: string
+      }>
+    }
     file: {
       openItem: (path: string) => Promise<void>
       readFile: (filePath: string) => Promise<Uint8Array>
-      copyToRoot: (rootPath: string, fileName: string, data: ArrayBuffer) => Promise<{ ok: boolean; message?: string }>
+      copyToRoot: (rootPath: string, fileName: string, data: ArrayBuffer) => Promise<{ ok: boolean; path?: string; message?: string }>
     }
   }
 }

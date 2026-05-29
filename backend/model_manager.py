@@ -2,10 +2,13 @@ import os
 import asyncio
 import shutil
 import time
+import platform
 from pathlib import Path
 from threading import Event as ThreadEvent, Lock
 
 import requests
+import torch
+import numpy as np
 from huggingface_hub import hf_hub_download, hf_hub_url
 
 REPO_ID = "openai/clip-vit-base-patch32"
@@ -27,6 +30,35 @@ _downloaded_bytes = 0
 _total_bytes = 0
 _completed_bytes = 0
 _start_time = 0.0
+
+
+# Lazy-loaded CLIP model singleton
+_clip_model = None
+_clip_processor = None
+
+
+def get_clip_model():
+    """Load CLIP model + processor once and cache. Returns (model, processor)."""
+    global _clip_model, _clip_processor
+
+    if _clip_model is not None and _clip_processor is not None:
+        return _clip_model, _clip_processor
+
+    from transformers import CLIPModel, CLIPProcessor
+
+    model_dir = get_model_dir()
+
+    device = "cpu"
+    if torch.cuda.is_available():
+        device = "cuda"
+    elif platform.system() == "Darwin" and hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+        device = "mps"
+
+    _clip_model = CLIPModel.from_pretrained(str(model_dir)).to(device)
+    _clip_model.eval()
+    _clip_processor = CLIPProcessor.from_pretrained(str(model_dir))
+
+    return _clip_model, _clip_processor
 
 
 def cancel_download():
