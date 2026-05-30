@@ -9,7 +9,6 @@ import threading
 
 from model_manager import (
     is_model_ready,
-    download_model,
     cancel_download,
     _delete_model_files,
 )
@@ -41,11 +40,6 @@ async def emit_push(event: dict):
 TICS_DATA_DIR = os.environ.get("TICS_DATA_DIR", str(Path.home() / ".tics"))
 MODEL_DIR = Path(TICS_DATA_DIR) / "models" / "clip-vit-b32"
 SENTINEL_FILE = MODEL_DIR / "download_complete"
-
-
-def is_model_ready() -> bool:
-    return SENTINEL_FILE.exists()
-
 
 # Track active download thread
 _download_thread = None
@@ -108,7 +102,9 @@ async def handle_request(request):
             event_data = {k: v for k, v in event.items() if k != "type"}
             push_event(event_type, event_data)
 
-        result = start_indexing(_on_indexing_event, root_path, total_images, indexed_so_far)
+        result = start_indexing(
+            _on_indexing_event, root_path, total_images, indexed_so_far
+        )
         return result
 
     async def handle_indexing_get_status(p):
@@ -132,7 +128,9 @@ async def handle_request(request):
         root_path = p.get("rootPath", "")
         top_k = p.get("topK", 50)
         fusion_weight = p.get("fusionWeight", 50)
-        results = search_index(text, image_path, image_data, root_path, top_k, fusion_weight)
+        results = search_index(
+            text, image_path, image_data, root_path, top_k, fusion_weight
+        )
         return {"results": results}
 
     handlers = {

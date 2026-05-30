@@ -69,9 +69,3 @@ async def get_system_info():
     loop = asyncio.get_event_loop()
     _system_info_cache = await loop.run_in_executor(None, _get_system_info_internal)
     return _system_info_cache
-
-
-async def handle_model_get_status(_p):
-    """Get model status and device information."""
-    sys_info = await get_system_info()
-    return {"ready": _p.get("is_model_ready")(), "device": sys_info["device"]}
