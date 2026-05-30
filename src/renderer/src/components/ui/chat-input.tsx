@@ -181,7 +181,7 @@ export default function ChatInput({
           placeholder={placeholder}
           disabled={disabled}
           rows={1}
-          className="min-h-[24px] max-h-[120px] resize-none border-0 !bg-transparent p-0 !text-sm shadow-none focus-visible:ring-0 placeholder:text-muted-foreground"
+          className="min-h-6 max-h-30 resize-none border-0 bg-transparent! p-0 text-sm! shadow-none focus-visible:ring-0 placeholder:text-muted-foreground"
         />
       </div>
 

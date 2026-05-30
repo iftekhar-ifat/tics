@@ -29,10 +29,10 @@ const MIME_TYPES: Record<string, string> = {
 async function readFileAsBlobUrl(path: string): Promise<string> {
   try {
     const uint8 = await window.api.file.readFile(path)
-    const name = path.split(/[/\\]/).pop() || 'image'
+    const name = path.split(/[/\\]/).pop() ?? 'image'
     const ext = name.split('.').pop()?.toLowerCase() ?? ''
-    const type = MIME_TYPES[ext] ?? 'application/octet-stream'
-    const file = new File([uint8 as unknown as ArrayBuffer], name, { type })
+    const mime = MIME_TYPES[ext] ?? 'application/octet-stream'
+    const file = new File([uint8.buffer as ArrayBuffer], name, { type: mime })
     return await createImageThumbnail(file, 200)
   } catch {
     return ''
