@@ -169,7 +169,10 @@ export default function ChatInput({
         </div>
       )}
 
-      <div className="flex items-end gap-2 px-4 py-3">
+      <div
+        className="flex items-end gap-2 px-4 py-3 cursor-text"
+        onClick={() => textareaRef.current?.focus()}
+      >
         <Textarea
           ref={textareaRef}
           value={text}

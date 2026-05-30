@@ -261,7 +261,14 @@ export function registerIpcHandlers(): void {
     'search:query',
     async (
       _event,
-      params: { text?: string; imagePath?: string; imageData?: string; rootPath: string; topK?: number; fusionWeight?: number }
+      params: {
+        text?: string
+        imagePath?: string
+        imageData?: string
+        rootPath: string
+        topK?: number
+        fusionWeight?: number
+      }
     ) => {
       try {
         const result = await callBackend('indexing.search', {

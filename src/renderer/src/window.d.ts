@@ -126,7 +126,11 @@ interface Window {
     file: {
       openItem: (path: string) => Promise<void>
       readFile: (filePath: string) => Promise<Uint8Array>
-      copyToRoot: (rootPath: string, fileName: string, data: ArrayBuffer) => Promise<{ ok: boolean; path?: string; message?: string }>
+      copyToRoot: (
+        rootPath: string,
+        fileName: string,
+        data: ArrayBuffer
+      ) => Promise<{ ok: boolean; path?: string; message?: string }>
     }
   }
 }

@@ -93,7 +93,8 @@ export function useIndexing() {
   }
 
   const { indexed, state: rawState } = status
-  const displayTotal = rawState === 'complete' ? indexed : Math.max(indexed, folderStats.imageCount || 0)
+  const displayTotal =
+    rawState === 'complete' ? indexed : Math.max(indexed, folderStats.imageCount || 0)
   const safeIndexed = Math.min(indexed, displayTotal)
   const remaining = displayTotal - safeIndexed
   const pct = displayTotal > 0 ? Math.round((safeIndexed / displayTotal) * 100) : 0
