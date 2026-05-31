@@ -1,3 +1,5 @@
+![Thumbnail](./src/renderer/src/assets/tics-thumbnail.png)
+
 # Tics — Text · Image · Context · Search
 
 A local-first, privacy-focused desktop app for searching your personal image library using natural language, a reference image, or both combined. Everything runs on-device — no cloud, no telemetry.
@@ -19,16 +21,12 @@ A local-first, privacy-focused desktop app for searching your personal image lib
 
 | Layer          | Technology                                                       |
 | -------------- | ---------------------------------------------------------------- |
-| Desktop shell  | Electron                                                         |
-| Frontend       | React, TypeScript, Tailwind CSS 4                                |
 | Bundler        | electron-vite                                                    |
-| UI components  | Shadcn + Phosphor icons                                          |
 | State          | Zustand with persist middleware                                  |
 | Routing        | TanStack Router                                                  |
 | Python backend | spawned child process, stdin/stdout JSON-RPC IPC                 |
 | Embeddings     | CLIP ViT-B/32 (for now) via HuggingFace `transformers` + `torch` |
 | Vector search  | FAISS (`IndexFlatIP` — inner product / cosine similarity)        |
-| File watching  | chokidar (Electron side)                                         |
 | Packaging      | PyInstaller (Python) + electron-builder (Electron)               |
 | Python env     | UV package manager                                               |
 
