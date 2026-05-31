@@ -17,6 +17,10 @@ A local-first, privacy-focused desktop app for searching your personal image lib
 - **Customizable search defaults** — top-K count, text/image fusion weight, sort order
 - **Configurable model folder** — download from HuggingFace or adopt an existing model directory
 
+## Demo
+
+🎬 [Tics Demo Video](https://youtu.be/BdtVuS053sU)
+
 ## Tech stack
 
 | Layer          | Technology                                                       |
